@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { motion } from "framer-motion";
-import { Clock, DollarSign, ChevronDown, ChevronUp } from "lucide-react";
+import { Clock, DollarSign, ChevronDown, ChevronUp, Star } from "lucide-react";
 import { MilestoneActions } from "@/components/milestone-actions";
+import { RateFreelancer } from "@/components/rating-freelancer";
 import type { Escrow, Milestone } from "@/lib/web3/types";
 
 interface EscrowCardProps {
@@ -26,6 +27,8 @@ interface EscrowCardProps {
     color: string;
     bgColor: string;
   };
+  rating?: { rating: number; exists: boolean };
+  onRatingSubmitted?: () => void;
 }
 
 export function EscrowCard({
@@ -41,6 +44,8 @@ export function EscrowCard({
   onDispute,
   calculateDaysLeft,
   getDaysLeftMessage,
+  rating,
+  onRatingSubmitted,
 }: EscrowCardProps) {
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -200,6 +205,21 @@ export function EscrowCard({
 
             {expandedEscrow === escrow.id && (
               <div className="space-y-4 pt-4 border-t">
+                {/* Rating Section for Completed Escrows */}
+                {escrow.status === "completed" && escrow.isClient && (
+                  <div className="p-4 bg-muted/20 rounded-lg border">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-medium">Rate Freelancer</h4>
+                    </div>
+                    <RateFreelancer
+                      escrowId={escrow.id}
+                      freelancerAddress={escrow.beneficiary}
+                      onRated={onRatingSubmitted}
+                      existingRating={rating}
+                    />
+                  </div>
+                )}
+
                 <div className="space-y-2">
                   <h4 className="font-medium">Milestones:</h4>
                   {escrow.milestones.map((milestone, idx) => (

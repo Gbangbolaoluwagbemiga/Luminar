@@ -27,6 +27,7 @@ import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { DashboardStats } from "@/components/dashboard/dashboard-stats";
 import { EscrowCard } from "@/components/dashboard/escrow-card";
 import { DashboardLoading } from "@/components/dashboard/dashboard-loading";
+import { RateFreelancer } from "@/components/rating-freelancer";
 
 export default function DashboardPage() {
   const { wallet, getContract } = useWeb3();
@@ -38,6 +39,10 @@ export default function DashboardPage() {
   const [submittingMilestone, setSubmittingMilestone] = useState<string | null>(
     null
   );
+  const [escrowRatings, setEscrowRatings] = useState<
+    Record<string, { rating: number; exists: boolean }>
+  >({});
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const getStatusFromNumber = (status: number): string => {
     switch (status) {
@@ -352,7 +357,9 @@ export default function DashboardPage() {
   }, [wallet.isConnected]);
 
   const fetchUserEscrows = async () => {
-    setLoading(true);
+    if (!isRefreshing) {
+      setLoading(true);
+    }
     try {
       const contract = getContract(CONTRACTS.SECUREFLOW_ESCROW, SECUREFLOW_ABI);
 
@@ -415,6 +422,38 @@ export default function DashboardPage() {
 
       // Set the actual escrows from the contract
       setEscrows(userEscrows);
+
+      // Fetch ratings for completed escrows
+      const ratings: Record<string, { rating: number; exists: boolean }> = {};
+      for (const escrow of userEscrows) {
+        if (escrow.status === "completed" && escrow.isClient) {
+          try {
+            const ratingData = await contract.call(
+              "getEscrowRating",
+              escrow.id
+            );
+            if (
+              ratingData &&
+              Array.isArray(ratingData) &&
+              ratingData.length >= 5 &&
+              ratingData[4]
+            ) {
+              // ratingData: [rater, freelancer, rating, ratedAt, exists]
+              ratings[escrow.id] = {
+                rating: Number(ratingData[2]) || 0,
+                exists: Boolean(ratingData[4]),
+              };
+            } else {
+              ratings[escrow.id] = { rating: 0, exists: false };
+            }
+          } catch (error) {
+            // Rating doesn't exist yet or error fetching
+            console.log(`Rating check for escrow ${escrow.id}:`, error);
+            ratings[escrow.id] = { rating: 0, exists: false };
+          }
+        }
+      }
+      setEscrowRatings(ratings);
     } catch (error) {
       toast({
         title: "Failed to load escrows",
@@ -423,7 +462,13 @@ export default function DashboardPage() {
       });
     } finally {
       setLoading(false);
+      setIsRefreshing(false);
     }
+  };
+
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    fetchUserEscrows();
   };
 
   const getStatusBadge = (status: string, escrow?: Escrow) => {
@@ -904,7 +949,10 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen py-12">
       <div className="container mx-auto px-4">
-        <DashboardHeader />
+        <DashboardHeader
+          onRefresh={handleRefresh}
+          isRefreshing={isRefreshing}
+        />
         <DashboardStats escrows={escrows} />
 
         {escrows.length === 0 ? (
@@ -917,39 +965,44 @@ export default function DashboardPage() {
           </Card>
         ) : (
           <div className="space-y-6">
-            {escrows.map((escrow, index) => (
-              <EscrowCard
-                key={escrow.id}
-                escrow={escrow}
-                index={index}
-                expandedEscrow={expandedEscrow}
-                submittingMilestone={
-                  submittingMilestone === escrow.id ? "true" : "false"
-                }
-                onToggleExpanded={() =>
-                  setExpandedEscrow(
-                    expandedEscrow === escrow.id ? null : escrow.id
-                  )
-                }
-                onApproveMilestone={approveMilestone}
-                onRejectMilestone={(
-                  escrowId: string,
-                  milestoneIndex: number
-                ) => {
-                  // For now, use empty reason - this should be handled by the component
-                  rejectMilestone(
-                    escrowId,
-                    milestoneIndex,
-                    "No reason provided"
-                  );
-                }}
-                onDisputeMilestone={disputeMilestone}
-                onStartWork={startWork}
-                onDispute={openDispute}
-                calculateDaysLeft={calculateDaysLeft}
-                getDaysLeftMessage={getDaysLeftMessage}
-              />
-            ))}
+            {escrows.map((escrow, index) => {
+              const rating = escrowRatings[escrow.id];
+              return (
+                <EscrowCard
+                  key={escrow.id}
+                  escrow={escrow}
+                  index={index}
+                  expandedEscrow={expandedEscrow}
+                  submittingMilestone={
+                    submittingMilestone === escrow.id ? "true" : "false"
+                  }
+                  onToggleExpanded={() =>
+                    setExpandedEscrow(
+                      expandedEscrow === escrow.id ? null : escrow.id
+                    )
+                  }
+                  onApproveMilestone={approveMilestone}
+                  onRejectMilestone={(
+                    escrowId: string,
+                    milestoneIndex: number
+                  ) => {
+                    // For now, use empty reason - this should be handled by the component
+                    rejectMilestone(
+                      escrowId,
+                      milestoneIndex,
+                      "No reason provided"
+                    );
+                  }}
+                  onDisputeMilestone={disputeMilestone}
+                  onStartWork={startWork}
+                  onDispute={openDispute}
+                  calculateDaysLeft={calculateDaysLeft}
+                  getDaysLeftMessage={getDaysLeftMessage}
+                  rating={rating}
+                  onRatingSubmitted={() => fetchUserEscrows()}
+                />
+              );
+            })}
           </div>
         )}
       </div>
