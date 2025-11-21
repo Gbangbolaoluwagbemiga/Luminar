@@ -113,6 +113,11 @@ export default function FreelancerPage() {
   const [escrowRatings, setEscrowRatings] = useState<
     Record<string, { rating: number; exists: boolean }>
   >({});
+  const [freelancerRating, setFreelancerRating] = useState<{
+    averageRating: number;
+    totalRatings: number;
+  } | null>(null);
+  const [badgeTier, setBadgeTier] = useState<number | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -454,20 +459,61 @@ export default function FreelancerPage() {
               "getEscrowRating",
               escrow.id
             );
-            if (ratingData && ratingData[4]) {
+            if (
+              ratingData &&
+              Array.isArray(ratingData) &&
+              ratingData.length >= 5 &&
+              ratingData[4]
+            ) {
               // ratingData: [rater, freelancer, rating, ratedAt, exists]
               ratings[escrow.id] = {
-                rating: Number(ratingData[2]),
+                rating: Number(ratingData[2]) || 0,
                 exists: Boolean(ratingData[4]),
               };
+            } else {
+              ratings[escrow.id] = { rating: 0, exists: false };
             }
           } catch (error) {
             // Rating doesn't exist yet or error fetching
+            console.log(`Rating check for escrow ${escrow.id}:`, error);
             ratings[escrow.id] = { rating: 0, exists: false };
           }
         }
       }
       setEscrowRatings(ratings);
+
+      // Fetch overall freelancer rating
+      if (wallet.address) {
+        try {
+          const ratingData = await contract.call(
+            "getFreelancerRating",
+            wallet.address
+          );
+          if (
+            ratingData &&
+            Array.isArray(ratingData) &&
+            ratingData.length >= 2
+          ) {
+            // ratingData: [averageRating, totalRatings]
+            // averageRating is stored as percentage (0-500), divide by 100 for actual rating
+            const averageRating = Number(ratingData[0]) / 100;
+            const totalRatings = Number(ratingData[1]);
+            setFreelancerRating({ averageRating, totalRatings });
+          }
+        } catch (error) {
+          console.log("Error fetching freelancer rating:", error);
+          setFreelancerRating({ averageRating: 0, totalRatings: 0 });
+        }
+
+        // Fetch badge tier
+        try {
+          const tier = await contract.call("getBadgeTier", wallet.address);
+          setBadgeTier(Number(tier) || 0);
+        } catch (error) {
+          console.log("Error fetching badge tier:", error);
+          setBadgeTier(0);
+        }
+      }
 
       // Update submitted milestones based on current data
       const currentSubmittedMilestones = new Set<string>();
@@ -1239,7 +1285,11 @@ export default function FreelancerPage() {
         ) : (
           <div className="space-y-6">
             {/* Stats Section */}
-            <FreelancerStats escrows={escrows} />
+            <FreelancerStats
+              escrows={escrows}
+              freelancerRating={freelancerRating}
+              badgeTier={badgeTier}
+            />
 
             {/* Projects Section */}
             <div className="grid gap-6">
@@ -1293,7 +1343,7 @@ export default function FreelancerPage() {
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+                      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
                         <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
                           <DollarSign className="h-5 w-5 text-green-600 dark:text-green-400" />
                           <div>
@@ -1376,6 +1426,41 @@ export default function FreelancerPage() {
                             </p>
                           </div>
                         </div>
+                        {/* Client Rating Box - Only for completed projects */}
+                        {escrow.status === "completed" && (
+                          <div className="flex items-center gap-2 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                            <Star className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+                            <div className="flex-1">
+                              <p className="text-sm text-gray-600 dark:text-gray-400">
+                                Client Rating
+                              </p>
+                              {escrowRatings[escrow.id]?.exists ? (
+                                <div className="flex items-center gap-1.5">
+                                  <div className="flex items-center gap-0.5">
+                                    {[1, 2, 3, 4, 5].map((star) => (
+                                      <Star
+                                        key={star}
+                                        className={`h-3.5 w-3.5 ${
+                                          star <=
+                                          escrowRatings[escrow.id].rating
+                                            ? "fill-yellow-400 text-yellow-400"
+                                            : "text-gray-300"
+                                        }`}
+                                      />
+                                    ))}
+                                  </div>
+                                  <span className="font-semibold text-yellow-700 dark:text-yellow-400 text-sm">
+                                    {escrowRatings[escrow.id].rating}/5
+                                  </span>
+                                </div>
+                              ) : (
+                                <p className="text-xs text-muted-foreground">
+                                  Pending
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        )}
                       </div>
 
                       {/* Milestones - Compact Design */}

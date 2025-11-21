@@ -8,6 +8,8 @@ import {
   Clock,
   Pause,
   AlertTriangle,
+  Star,
+  Award,
 } from "lucide-react";
 
 interface FreelancerStatsProps {
@@ -19,9 +21,18 @@ interface FreelancerStatsProps {
       status: string;
     }>;
   }>;
+  freelancerRating?: {
+    averageRating: number;
+    totalRatings: number;
+  } | null;
+  badgeTier?: number | null;
 }
 
-export function FreelancerStats({ escrows }: FreelancerStatsProps) {
+export function FreelancerStats({
+  escrows,
+  freelancerRating,
+  badgeTier,
+}: FreelancerStatsProps) {
   const totalEarnings = escrows.reduce(
     (sum, escrow) => sum + Number.parseFloat(escrow.releasedAmount),
     0
@@ -99,8 +110,16 @@ export function FreelancerStats({ escrows }: FreelancerStatsProps) {
     return isEscrowTerminated(escrow);
   }).length;
 
+  // Get badge tier name
+  const getBadgeTierName = (tier: number | null) => {
+    if (tier === null || tier === undefined) return "Beginner";
+    if (tier === 2) return "Pro";
+    if (tier === 1) return "Intermediate";
+    return "Beginner";
+  };
+
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 md:gap-6 mb-8">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-8 gap-4 md:gap-6 mb-8">
       <Card className="glass border-primary/20 p-4 md:p-6">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Total Earnings</CardTitle>
@@ -168,6 +187,44 @@ export function FreelancerStats({ escrows }: FreelancerStatsProps) {
         <CardContent>
           <div className="text-2xl font-bold">{terminatedProjects}</div>
           <p className="text-xs text-muted-foreground">projects</p>
+        </CardContent>
+      </Card>
+
+      <Card className="glass border-yellow-500/20 p-4 md:p-6">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Rating</CardTitle>
+          <Star className="h-4 w-4 text-yellow-500" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">
+            {freelancerRating && freelancerRating.totalRatings > 0
+              ? freelancerRating.averageRating.toFixed(1)
+              : "N/A"}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {freelancerRating && freelancerRating.totalRatings > 0
+              ? `${freelancerRating.totalRatings} ratings`
+              : "No ratings yet"}
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card className="glass border-purple-500/20 p-4 md:p-6">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Badge Tier</CardTitle>
+          <Award className="h-4 w-4 text-purple-500" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">
+            {getBadgeTierName(badgeTier)}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {badgeTier === 2
+              ? "20+ projects"
+              : badgeTier === 1
+              ? "5-19 projects"
+              : "0-4 projects"}
+          </p>
         </CardContent>
       </Card>
     </div>
