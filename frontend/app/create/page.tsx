@@ -819,9 +819,9 @@ export default function CreateEscrowPage() {
               );
 
               toast({
-                title: "🚀 Gasless Escrow Created!",
+                title: "Transaction Submitted",
                 description:
-                  "Escrow created with no gas fees using Smart Account delegation",
+                  "Your transaction has been submitted. Waiting for confirmation...",
               });
             } else {
               // Use regular transaction
@@ -839,8 +839,9 @@ export default function CreateEscrowPage() {
               );
 
               toast({
-                title: "Escrow Created!",
-                description: "Your escrow has been created successfully",
+                title: "Transaction Submitted",
+                description:
+                  "Your transaction has been submitted. Waiting for confirmation...",
               });
             }
             break;
@@ -895,9 +896,9 @@ export default function CreateEscrowPage() {
           );
 
           toast({
-            title: "🚀 Gasless ERC20 Escrow Created!",
+            title: "Transaction Submitted",
             description:
-              "ERC20 escrow created with no gas fees using Smart Account delegation",
+              "Your ERC20 escrow transaction has been submitted. Waiting for confirmation...",
           });
         } else {
           // Use regular transaction
@@ -916,8 +917,9 @@ export default function CreateEscrowPage() {
           );
 
           toast({
-            title: "ERC20 Escrow Created!",
-            description: "Your ERC20 escrow has been created successfully",
+            title: "Transaction Submitted",
+            description:
+              "Your ERC20 escrow transaction has been submitted. Waiting for confirmation...",
           });
         }
       }
@@ -961,16 +963,16 @@ export default function CreateEscrowPage() {
           // Transaction successful
           toast({
             title: isOpenJob
-              ? "🚀 Gasless Job Posted!"
-              : "🚀 Gasless Escrow Created!",
+              ? "✅ Job Posted Successfully!"
+              : "✅ Escrow Created Successfully!",
             description: isOpenJob
-              ? "Your job is now live with no gas fees! Freelancers can apply on the Browse Jobs page."
-              : "Your escrow has been created successfully with no gas fees! The freelancer can now start working.",
+              ? "Your job is now live with no gas fees! Freelancers can apply on the Browse Jobs page. Redirecting..."
+              : "Your escrow has been created successfully with no gas fees! The freelancer can now start working. Redirecting...",
           });
 
           setTimeout(() => {
             router.push(isOpenJob ? "/jobs" : "/dashboard");
-          }, 2000);
+          }, 3000);
         } else {
           throw new Error("Transaction failed on blockchain");
         }
@@ -1005,15 +1007,17 @@ export default function CreateEscrowPage() {
         if (receipt.status === "0x1") {
           // Transaction successful
           toast({
-            title: isOpenJob ? "Job posted!" : "Escrow created!",
+            title: isOpenJob
+              ? "✅ Job Posted Successfully!"
+              : "✅ Escrow Created Successfully!",
             description: isOpenJob
-              ? "Your job is now live. Freelancers can apply on the Browse Jobs page."
-              : "Your escrow has been successfully created",
+              ? "Your job is now live. Freelancers can apply on the Browse Jobs page. Redirecting..."
+              : "Your escrow has been successfully created. Redirecting...",
           });
 
           setTimeout(() => {
             router.push(isOpenJob ? "/jobs" : "/dashboard");
-          }, 2000);
+          }, 3000);
         } else {
           // Transaction failed
           throw new Error("Transaction failed on blockchain");
