@@ -87,7 +87,7 @@
   "function rejectMilestone(uint256,uint256,string)",
   "function renounceOwnership()",
   "function reputation(address) view returns (uint256)",
-  "function resolveDispute(uint256,uint256,uint256)",
+  "function resolveDispute(uint256,uint256,uint256,string)",
   "function resubmitMilestone(uint256,uint256,string)",
   "function revokeArbiter(address)",
   "function setFeeCollector(address)",

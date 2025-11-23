@@ -179,6 +179,7 @@ export default function DashboardPage() {
             let status = 0;
             let submittedAt = undefined;
             let approvedAt = undefined;
+            let disputedBy = "";
             let disputeReason = "";
             let rejectionReason = "";
 
@@ -221,6 +222,16 @@ export default function DashboardPage() {
                       status = 0;
                     }
 
+                    // Debug: Log raw milestone status for resolved milestones
+                    if (status === 4 || m.status === 4 || m[2] === 4) {
+                      console.log(`🔍 Milestone ${index} RESOLVED detected:`, {
+                        status,
+                        "m.status": m.status,
+                        "m[2]": m[2],
+                        description: description.substring(0, 30),
+                      });
+                    }
+
                     if (
                       m.submittedAt !== undefined &&
                       Number(m.submittedAt) > 0
@@ -239,7 +250,15 @@ export default function DashboardPage() {
                       approvedAt = Number(m[4]) * 1000;
                     }
 
-                    // Parse dispute reason (index 7 in contract)
+                    // Parse disputedBy (index 6 in contract) - for disputed: who disputed, for resolved: winner
+                    let disputedBy = "";
+                    if (m.disputedBy !== undefined) {
+                      disputedBy = String(m.disputedBy);
+                    } else if (m[6] !== undefined) {
+                      disputedBy = String(m[6]);
+                    }
+
+                    // Parse dispute reason (index 7 in contract) - for disputed: dispute reason, for resolved: resolution reason
                     if (m.disputeReason !== undefined) {
                       disputeReason = String(m.disputeReason);
                     } else if (m[7] !== undefined) {
@@ -275,13 +294,30 @@ export default function DashboardPage() {
             }
 
             // Determine the actual status based on timestamps and status
+            // IMPORTANT: Check status FIRST before any other logic
+            // CRITICAL: If status is 4 (Resolved), NEVER override it
             let finalStatus = getMilestoneStatusFromNumber(status);
+
+            // Debug log for milestone status parsing
+            if (status === 4) {
+              console.log(
+                `✅ Milestone ${index} has status 4 (Resolved) - finalStatus:`,
+                finalStatus,
+                "description:",
+                description.substring(0, 30)
+              );
+            }
 
             // Check if this is a placeholder milestone
             const isPlaceholder =
               description && description.includes("To be defined");
 
-            if (isPlaceholder) {
+            // CRITICAL: Never override resolved status (status 4)
+            if (status === 4) {
+              // Status is already "resolved" from getMilestoneStatusFromNumber
+              // Don't let any other logic override it
+              finalStatus = "resolved";
+            } else if (isPlaceholder) {
               // For placeholder milestones, determine status based on previous milestones
               if (index === 0) {
                 finalStatus = "pending";
@@ -299,6 +335,7 @@ export default function DashboardPage() {
                 finalStatus = "disputed";
               } else if (status === 4) {
                 finalStatus = "resolved";
+                console.log(`Milestone ${index} is RESOLVED (status 4)`);
               } else if (status === 5) {
                 finalStatus = "rejected";
               }
@@ -313,16 +350,29 @@ export default function DashboardPage() {
                 }
               }
               // Special case: If this is the first milestone and funds have been released, it should be approved
+              // BUT: Don't override if status is already "resolved" (status 4) or "disputed" (status 3)
               else if (
+                status !== 4 &&
+                status !== 3 &&
                 index === 0 &&
                 escrowSummary[5] &&
                 Number(escrowSummary[5]) > 0
               ) {
                 finalStatus = "approved";
               }
-              // Otherwise use the parsed status
+              // Otherwise use the parsed status (which should already be set correctly from getMilestoneStatusFromNumber)
               else {
+                // Status is already correctly set from getMilestoneStatusFromNumber
+                // Don't override resolved or disputed statuses
               }
+            }
+
+            // Final safety check: If status was 4, ensure finalStatus is "resolved"
+            if (status === 4 && finalStatus !== "resolved") {
+              console.error(
+                `⚠️ CRITICAL: Milestone ${index} status 4 was overridden to ${finalStatus}! Fixing...`
+              );
+              finalStatus = "resolved";
             }
 
             // For resolved milestones, disputedBy contains the winner and disputeReason contains the resolution reason
@@ -330,7 +380,19 @@ export default function DashboardPage() {
             const resolutionReason =
               finalStatus === "resolved" ? disputeReason : undefined;
 
-            return {
+            // Debug: Log resolved milestone details
+            if (finalStatus === "resolved") {
+              console.log(`🔍 RESOLVED Milestone ${index} details:`, {
+                description: description.substring(0, 30),
+                status: finalStatus,
+                disputedBy,
+                disputeReason,
+                winner,
+                resolutionReason,
+              });
+            }
+
+            const milestoneResult = {
               description,
               amount,
               status: finalStatus,
@@ -343,6 +405,16 @@ export default function DashboardPage() {
               resolutionReason,
               rejectionReason,
             };
+
+            // Final debug: Log if milestone is resolved but not detected
+            if (status === 4 && milestoneResult.status !== "resolved") {
+              console.error(
+                `❌ CRITICAL ERROR: Milestone ${index} with status 4 was not set to resolved!`,
+                milestoneResult
+              );
+            }
+
+            return milestoneResult;
           } catch (error) {
             return {
               description: `Milestone ${index + 1}`,
@@ -393,6 +465,68 @@ export default function DashboardPage() {
 
             // Show escrows for both clients and freelancers, but with different functionality
             if (isPayer || isBeneficiary) {
+              // Fetch milestones first to check for resolved disputes
+              const milestones = (await fetchMilestones(
+                contract,
+                i,
+                escrowSummary
+              )) as Milestone[];
+
+              // Debug: Log milestone statuses
+              console.log(
+                `Escrow ${i} milestones:`,
+                milestones.map((m) => ({
+                  description: m.description,
+                  status: m.status,
+                  resolutionReason: m.resolutionReason,
+                  winner: m.winner,
+                }))
+              );
+
+              // Check if there are resolved disputes
+              const resolvedMilestones = milestones.filter(
+                (milestone) => milestone.status === "resolved"
+              );
+              const hasResolvedDispute = resolvedMilestones.length > 0;
+
+              // Debug: Log resolved milestones
+              if (resolvedMilestones.length > 0) {
+                console.log(
+                  `✅ Escrow ${i} has ${resolvedMilestones.length} resolved milestone(s):`,
+                  resolvedMilestones.map((m) => ({
+                    description: m.description?.substring(0, 30),
+                    status: m.status,
+                    resolutionReason: m.resolutionReason,
+                    winner: m.winner,
+                  }))
+                );
+              }
+
+              console.log(
+                `Escrow ${i} hasResolvedDispute:`,
+                hasResolvedDispute
+              );
+
+              // Get base status from contract
+              const baseStatus = getStatusFromNumber(Number(escrowSummary[3]));
+
+              // If there are resolved disputes, override status to "disputed"
+              // (which will be displayed as "Dispute Resolved" in the badge)
+              const finalStatus = hasResolvedDispute
+                ? "disputed" // We'll show this as "Dispute Resolved" in the badge
+                : (baseStatus as
+                    | "pending"
+                    | "active"
+                    | "completed"
+                    | "disputed");
+
+              console.log(
+                `Escrow ${i} finalStatus:`,
+                finalStatus,
+                "baseStatus:",
+                baseStatus
+              );
+
               // Convert contract data to our Escrow type
               const escrow: Escrow = {
                 id: i.toString(),
@@ -403,18 +537,10 @@ export default function DashboardPage() {
                 token: escrowSummary[7], // token
                 totalAmount: escrowSummary[4].toString(), // totalAmount
                 releasedAmount: escrowSummary[5].toString(), // paidAmount
-                status: getStatusFromNumber(Number(escrowSummary[3])) as
-                  | "pending"
-                  | "active"
-                  | "completed"
-                  | "disputed", // status
+                status: finalStatus,
                 createdAt: Number(escrowSummary[10]) * 1000, // createdAt (convert to milliseconds)
                 duration: Number(escrowSummary[8]) - Number(escrowSummary[10]), // deadline - createdAt (in seconds)
-                milestones: (await fetchMilestones(
-                  contract,
-                  i,
-                  escrowSummary
-                )) as Milestone[], // Fetch milestones from contract and assert correct type
+                milestones: milestones,
                 projectTitle: escrowSummary[13] || "", // projectTitle
                 projectDescription: escrowSummary[14] || "", // projectDescription
               };
@@ -480,9 +606,20 @@ export default function DashboardPage() {
   };
 
   const getStatusBadge = (status: string, escrow?: Escrow) => {
+    // Check if there are resolved disputes first
+    const hasResolvedDispute = escrow?.milestones.some(
+      (milestone) => milestone.status === "resolved"
+    );
+
     // Check if this escrow should be terminated
     const isTerminated = escrow ? isEscrowTerminated(escrow) : false;
-    const finalStatus = isTerminated ? "terminated" : status;
+
+    // If there are resolved disputes, show as "Dispute Resolved" instead of "active"
+    const finalStatus = hasResolvedDispute
+      ? "resolved"
+      : isTerminated
+      ? "terminated"
+      : status;
 
     const variants: Record<string, { variant: any; icon: any; label: string }> =
       {
@@ -497,6 +634,11 @@ export default function DashboardPage() {
           variant: "destructive",
           icon: AlertCircle,
           label: "Disputed",
+        },
+        resolved: {
+          variant: "secondary",
+          icon: CheckCircle2,
+          label: "Dispute Resolved",
         },
         terminated: {
           variant: "secondary",

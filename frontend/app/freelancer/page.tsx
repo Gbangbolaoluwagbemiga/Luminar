@@ -80,6 +80,9 @@ interface Milestone {
   approvedAt?: number;
   disputeReason?: string;
   rejectionReason?: string;
+  winner?: string;
+  resolutionReason?: string;
+  disputedBy?: string;
 }
 
 export default function FreelancerPage() {
@@ -405,7 +408,9 @@ export default function FreelancerPage() {
                       } else if (status === 3) {
                         finalStatus = "disputed";
                       } else if (status === 4) {
-                        finalStatus = "disputed";
+                        finalStatus = "resolved";
+                      } else if (status === 5) {
+                        finalStatus = "rejected";
                       }
                       // Priority 2: Fallback to timestamp-based logic if status is 0
                       else if (status === 0) {
@@ -442,13 +447,24 @@ export default function FreelancerPage() {
                       );
                     }
 
+                    // For resolved milestones, disputedBy contains the winner and disputeReason contains the resolution reason
+                    const winner =
+                      finalStatus === "resolved" ? disputedBy : undefined;
+                    const resolutionReason =
+                      finalStatus === "resolved" ? disputeReason : undefined;
+
                     return {
                       description,
                       amount,
                       status: finalStatus,
                       submittedAt,
                       approvedAt,
-                      disputeReason,
+                      disputedBy:
+                        finalStatus === "disputed" ? disputedBy : undefined,
+                      disputeReason:
+                        finalStatus === "disputed" ? disputeReason : undefined,
+                      winner,
+                      resolutionReason,
                       rejectionReason,
                     };
                   } catch (error) {
@@ -1688,6 +1704,51 @@ export default function FreelancerPage() {
                                       </div>
                                     </div>
                                   )}
+
+                                  {/* Show resolved status if milestone is resolved */}
+                                  {milestone.status === "resolved" &&
+                                    milestone.resolutionReason && (
+                                      <div className="mt-3 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
+                                        <div className="flex items-center gap-2 mb-2">
+                                          <Badge className="bg-purple-100 dark:bg-purple-800 text-purple-800 dark:text-purple-200">
+                                            Resolved
+                                          </Badge>
+                                        </div>
+                                        <p className="text-sm text-purple-700 dark:text-purple-300 mb-3">
+                                          This dispute has been resolved by the
+                                          admin.
+                                        </p>
+                                        {milestone.winner && (
+                                          <div className="mb-2 p-2 bg-purple-100 dark:bg-purple-800/30 rounded border border-purple-200 dark:border-purple-700">
+                                            <p className="text-xs font-medium text-purple-800 dark:text-purple-200 mb-1">
+                                              Winner:
+                                            </p>
+                                            <p className="text-sm text-purple-700 dark:text-purple-300">
+                                              {milestone.winner ===
+                                              escrow.beneficiary
+                                                ? "You (Freelancer)"
+                                                : milestone.winner ===
+                                                  escrow.payer
+                                                ? "Client"
+                                                : `${milestone.winner.slice(
+                                                    0,
+                                                    6
+                                                  )}...${milestone.winner.slice(
+                                                    -4
+                                                  )}`}
+                                            </p>
+                                          </div>
+                                        )}
+                                        <div className="mt-2 p-2 bg-purple-100 dark:bg-purple-800/30 rounded border border-purple-200 dark:border-purple-700">
+                                          <p className="text-xs font-medium text-purple-800 dark:text-purple-200 mb-1">
+                                            Admin Resolution Reason:
+                                          </p>
+                                          <p className="text-sm text-purple-700 dark:text-purple-300">
+                                            {milestone.resolutionReason}
+                                          </p>
+                                        </div>
+                                      </div>
+                                    )}
 
                                   {/* Show disputed status if milestone is disputed */}
                                   {milestone.status === "disputed" && (

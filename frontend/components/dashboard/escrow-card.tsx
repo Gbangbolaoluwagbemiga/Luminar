@@ -74,6 +74,12 @@ export function EscrowCard({
       milestone.status === "resolved"
   );
 
+  // Check if there are any resolved disputes
+  const resolvedMilestones = escrow.milestones.filter(
+    (m) => m.status === "resolved"
+  );
+  const hasResolvedDispute = resolvedMilestones.length > 0;
+
   const getMilestoneStatusColor = (status: string) => {
     switch (status) {
       case "pending":
@@ -137,10 +143,18 @@ export function EscrowCard({
             <div className="flex items-center gap-2">
               <Badge
                 className={getStatusColor(
-                  isTerminated ? "terminated" : escrow.status
+                  hasResolvedDispute
+                    ? "resolved"
+                    : isTerminated
+                    ? "terminated"
+                    : escrow.status
                 )}
               >
-                {isTerminated ? "terminated" : escrow.status}
+                {hasResolvedDispute
+                  ? "Dispute Resolved"
+                  : isTerminated
+                  ? "terminated"
+                  : escrow.status}
               </Badge>
               <Button
                 variant="ghost"
@@ -160,6 +174,51 @@ export function EscrowCard({
 
         <CardContent>
           <div className="space-y-4">
+            {/* Show resolved dispute summary at the top if exists */}
+            {hasResolvedDispute && resolvedMilestones.length > 0 && (
+              <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800 mb-4">
+                <p className="text-sm font-semibold text-purple-900 dark:text-purple-100 mb-2">
+                  ✅ Dispute Resolved ({resolvedMilestones.length} milestone
+                  {resolvedMilestones.length > 1 ? "s" : ""})
+                </p>
+                {resolvedMilestones.map((milestone, idx) => {
+                  const milestoneAmount =
+                    Number.parseFloat(milestone.amount) / 1e18;
+                  return (
+                    <div
+                      key={idx}
+                      className="text-xs text-purple-700 dark:text-purple-300 space-y-1 mt-2"
+                    >
+                      {milestone.resolutionReason && (
+                        <p>
+                          <span className="font-medium">Admin Reason:</span>{" "}
+                          {milestone.resolutionReason}
+                        </p>
+                      )}
+                      {milestone.winner && (
+                        <p>
+                          <span className="font-medium">Winner:</span>{" "}
+                          {milestone.winner === escrow.payer
+                            ? "Client"
+                            : milestone.winner === escrow.beneficiary
+                            ? "Freelancer"
+                            : `${milestone.winner.slice(
+                                0,
+                                6
+                              )}...${milestone.winner.slice(-4)}`}
+                        </p>
+                      )}
+                      <p>
+                        <span className="font-medium">Milestone Amount:</span>{" "}
+                        {milestoneAmount.toFixed(2)} tokens (funds distributed
+                        per admin decision)
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
             <div>
               <div className="flex items-center justify-between text-sm mb-2">
                 <span>Progress</span>
@@ -239,31 +298,38 @@ export function EscrowCard({
                         </p>
 
                         {/* Show resolution details for resolved disputes */}
-                        {milestone.status === "resolved" &&
-                          milestone.resolutionReason && (
-                            <div className="mt-2 p-2 bg-purple-50 dark:bg-purple-900/20 rounded border border-purple-200 dark:border-purple-800">
-                              <p className="text-xs font-semibold text-purple-800 dark:text-purple-200 mb-1">
-                                Dispute Resolved:
+                        {milestone.status === "resolved" && (
+                          <div className="mt-2 p-3 bg-purple-50 dark:bg-purple-900/20 rounded border border-purple-200 dark:border-purple-800">
+                            <p className="text-xs font-semibold text-purple-800 dark:text-purple-200 mb-2">
+                              ✅ Dispute Resolved by Admin:
+                            </p>
+                            {milestone.winner && (
+                              <p className="text-xs text-purple-700 dark:text-purple-300 mb-1">
+                                <span className="font-medium">Winner:</span>{" "}
+                                {milestone.winner === escrow.payer
+                                  ? "Client"
+                                  : milestone.winner === escrow.beneficiary
+                                  ? "Freelancer"
+                                  : `${milestone.winner.slice(
+                                      0,
+                                      6
+                                    )}...${milestone.winner.slice(-4)}`}
                               </p>
-                              {milestone.winner && (
-                                <p className="text-xs text-purple-700 dark:text-purple-300">
-                                  <span className="font-medium">Winner:</span>{" "}
-                                  {milestone.winner === escrow.payer
-                                    ? "Client"
-                                    : milestone.winner === escrow.beneficiary
-                                    ? "Freelancer"
-                                    : `${milestone.winner.slice(
-                                        0,
-                                        6
-                                      )}...${milestone.winner.slice(-4)}`}
-                                </p>
-                              )}
-                              <p className="text-xs text-purple-700 dark:text-purple-300 mt-1">
-                                <span className="font-medium">Reason:</span>{" "}
+                            )}
+                            {milestone.resolutionReason && (
+                              <p className="text-xs text-purple-700 dark:text-purple-300 mb-1">
+                                <span className="font-medium">
+                                  Admin Reason:
+                                </span>{" "}
                                 {milestone.resolutionReason}
                               </p>
-                            </div>
-                          )}
+                            )}
+                            <p className="text-xs text-purple-600 dark:text-purple-400 mt-2 italic">
+                              Funds have been distributed based on the admin's
+                              resolution decision.
+                            </p>
+                          </div>
+                        )}
                       </div>
                       <div className="flex items-center gap-2">
                         <Badge
