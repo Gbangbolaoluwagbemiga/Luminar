@@ -149,11 +149,17 @@ export default function DashboardPage() {
 
       // Try to get provider from wallet context or use RPC
       let provider: any = null;
+      let lastError: any = null;
+
       for (const rpcUrl of CELO_MAINNET.rpcUrls) {
         try {
           provider = new ethers.JsonRpcProvider(rpcUrl);
+          // Test connection
+          await provider.getBlockNumber();
           break;
         } catch (e) {
+          lastError = e;
+          provider = null;
           continue;
         }
       }
@@ -167,21 +173,179 @@ export default function DashboardPage() {
       );
 
       // Query DisputeResolved events for this escrow and milestone
+      // Try querying from block 0 first, then fallback to recent blocks if too large
+      let events: any[] = [];
+      const currentBlock = await provider.getBlockNumber();
+
+      // Try querying from deployment block or last 500k blocks (larger range)
+      const deploymentBlock = 0; // Start from block 0
+      const maxRange = 500000; // 500k blocks
+      const fromBlock = Math.max(deploymentBlock, currentBlock - maxRange);
+
+      // Create filter - try with specific escrowId and milestoneIndex
       const filter = contractWithProvider.filters.DisputeResolved(
         escrowId,
         milestoneIndex
       );
-      const events = await contractWithProvider.queryFilter(filter);
+
+      // Also try without milestoneIndex filter in case the filter doesn't work
+      const filterWithoutMilestone =
+        contractWithProvider.filters.DisputeResolved(escrowId);
+
+      try {
+        // Try querying the entire range first with specific filter
+        events = await contractWithProvider.queryFilter(
+          filter,
+          fromBlock,
+          currentBlock
+        );
+
+        // If no events found with specific filter, try without milestoneIndex filter
+        if (events.length === 0) {
+          try {
+            const allEvents = await contractWithProvider.queryFilter(
+              filterWithoutMilestone,
+              fromBlock,
+              currentBlock
+            );
+            // Filter manually by milestoneIndex
+            events = allEvents.filter((e: any) => {
+              const eventMilestoneIndex = Number(
+                e.args[1] || e.args.milestoneIndex || 0
+              );
+              return eventMilestoneIndex === milestoneIndex;
+            });
+          } catch (e) {
+            // Continue with empty events
+          }
+        }
+      } catch (eventError: any) {
+        // If range is too large, try querying from block 0
+        if (
+          eventError.message?.includes("too large") ||
+          eventError.message?.includes("limit") ||
+          eventError.message?.includes("query returned more")
+        ) {
+          try {
+            // Try from block 0
+            events = await contractWithProvider.queryFilter(
+              filter,
+              0,
+              currentBlock
+            );
+          } catch (e2: any) {
+            // If still failing, try in chunks
+            try {
+              const chunkSize = 100000; // 100k blocks per chunk
+              for (let start = 0; start <= currentBlock; start += chunkSize) {
+                const end = Math.min(start + chunkSize - 1, currentBlock);
+                try {
+                  const chunkEvents = await contractWithProvider.queryFilter(
+                    filter,
+                    start,
+                    end
+                  );
+                  events.push(...chunkEvents);
+                } catch (chunkError: any) {
+                  // Skip this chunk if it fails
+                  continue;
+                }
+              }
+            } catch (e3) {
+              // Give up if all queries fail
+              return null;
+            }
+          }
+        } else if (
+          !eventError.message?.includes("no backend is currently healthy") &&
+          !eventError.message?.includes("-32011")
+        ) {
+          // Log unexpected errors (not RPC health issues)
+        }
+      }
 
       if (events.length > 0) {
+        // Get the latest event (most recent resolution)
         const latestEvent = events[events.length - 1];
-        const beneficiaryAmount =
-          Number(latestEvent.args.beneficiaryAmount) / 1e18;
-        const refundAmount = Number(latestEvent.args.refundAmount) / 1e18;
-        return {
-          freelancerAmount: beneficiaryAmount,
-          clientAmount: refundAmount,
-        };
+
+        // Parse event args - ethers.js v6 structures event args
+        // DisputeResolved(escrowId indexed, milestoneIndex indexed, arbiter indexed, beneficiaryAmount, refundAmount, resolvedAt)
+        // All args are in the args array: [escrowId, milestoneIndex, arbiter, beneficiaryAmount, refundAmount, resolvedAt]
+        if (latestEvent.args) {
+          try {
+            let beneficiaryAmountRaw: any = null;
+            let refundAmountRaw: any = null;
+
+            // Try multiple ways to access event args
+            // Method 1: Array access (ethers.js v6)
+            if (Array.isArray(latestEvent.args)) {
+              if (latestEvent.args.length >= 5) {
+                beneficiaryAmountRaw = latestEvent.args[3];
+                refundAmountRaw = latestEvent.args[4];
+              }
+            }
+            // Method 2: Indexed access
+            else if (
+              latestEvent.args[3] !== undefined &&
+              latestEvent.args[4] !== undefined
+            ) {
+              beneficiaryAmountRaw = latestEvent.args[3];
+              refundAmountRaw = latestEvent.args[4];
+            }
+            // Method 3: Named property access
+            else if (
+              latestEvent.args.beneficiaryAmount !== undefined &&
+              latestEvent.args.refundAmount !== undefined
+            ) {
+              beneficiaryAmountRaw = latestEvent.args.beneficiaryAmount;
+              refundAmountRaw = latestEvent.args.refundAmount;
+            }
+            // Method 4: Try accessing via get() method if it's a Result object
+            else if (typeof latestEvent.args.get === "function") {
+              try {
+                beneficiaryAmountRaw = latestEvent.args.get(3);
+                refundAmountRaw = latestEvent.args.get(4);
+              } catch (e) {
+                // Try named access
+                try {
+                  beneficiaryAmountRaw =
+                    latestEvent.args.get("beneficiaryAmount");
+                  refundAmountRaw = latestEvent.args.get("refundAmount");
+                } catch (e2) {
+                  // Give up
+                }
+              }
+            }
+
+            if (beneficiaryAmountRaw !== null && refundAmountRaw !== null) {
+              // Convert to numbers (handle BigInt, string, or number)
+              const freelancerAmount = Number(beneficiaryAmountRaw) / 1e18;
+              const clientAmount = Number(refundAmountRaw) / 1e18;
+
+              // Return amounts if valid
+              if (
+                !isNaN(freelancerAmount) &&
+                !isNaN(clientAmount) &&
+                freelancerAmount >= 0 &&
+                clientAmount >= 0
+              ) {
+                return {
+                  freelancerAmount,
+                  clientAmount,
+                };
+              }
+            }
+          } catch (parseError) {
+            // Log error for debugging (only in development)
+            if (process.env.NODE_ENV === "development") {
+              console.warn(
+                "Failed to parse DisputeResolved event args:",
+                parseError,
+                latestEvent
+              );
+            }
+          }
+        }
       }
     } catch (error) {
       // Silently fail - we'll show generic split info
@@ -495,17 +659,38 @@ export default function DashboardPage() {
               // For resolved milestones, fetch exact fund split amounts from events
               for (let j = 0; j < milestones.length; j++) {
                 if (milestones[j].status === "resolved") {
-                  const amounts = await getDisputeResolutionAmounts(
-                    contract,
-                    i,
-                    j
-                  );
-                  if (amounts) {
-                    milestones[j] = {
-                      ...milestones[j],
-                      freelancerAmount: amounts.freelancerAmount,
-                      clientAmount: amounts.clientAmount,
-                    };
+                  try {
+                    const amounts = await getDisputeResolutionAmounts(
+                      contract,
+                      i,
+                      j
+                    );
+                    if (
+                      amounts &&
+                      amounts.freelancerAmount !== undefined &&
+                      amounts.clientAmount !== undefined &&
+                      !isNaN(amounts.freelancerAmount) &&
+                      !isNaN(amounts.clientAmount)
+                    ) {
+                      milestones[j] = {
+                        ...milestones[j],
+                        freelancerAmount: amounts.freelancerAmount,
+                        clientAmount: amounts.clientAmount,
+                      };
+                    } else if (process.env.NODE_ENV === "development") {
+                      console.log(
+                        `Escrow ${i}, Milestone ${j}: Could not fetch amounts`,
+                        amounts
+                      );
+                    }
+                  } catch (amountsError) {
+                    // Log error in development
+                    if (process.env.NODE_ENV === "development") {
+                      console.warn(
+                        `Failed to fetch amounts for Escrow ${i}, Milestone ${j}:`,
+                        amountsError
+                      );
+                    }
                   }
                 }
               }

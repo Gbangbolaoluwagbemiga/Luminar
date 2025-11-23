@@ -174,12 +174,39 @@ export function EscrowCard({
 
         <CardContent>
           <div className="space-y-4">
-            {/* Show resolved dispute summary at the top if exists - compact version */}
+            {/* Show resolved dispute info before progress bar */}
             {hasResolvedDispute && resolvedMilestones.length > 0 && (
-              <div className="p-2 bg-purple-50 dark:bg-purple-900/20 rounded border border-purple-200 dark:border-purple-800 mb-3">
-                <p className="text-xs font-semibold text-purple-900 dark:text-purple-100">
+              <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
+                <p className="text-sm font-semibold text-purple-900 dark:text-purple-100 mb-2">
                   ✅ Dispute Resolved
                 </p>
+                {resolvedMilestones.map((milestone, idx) => (
+                  <div
+                    key={idx}
+                    className="text-xs text-purple-700 dark:text-purple-300 space-y-1"
+                  >
+                    {milestone.resolutionReason && (
+                      <p>
+                        <span className="font-medium">Reason:</span>{" "}
+                        {milestone.resolutionReason}
+                      </p>
+                    )}
+                    {/* Show exact fund split if available */}
+                    {milestone.freelancerAmount !== undefined &&
+                    milestone.clientAmount !== undefined ? (
+                      <div className="text-xs text-purple-600 dark:text-purple-400 space-y-0.5 mt-1">
+                        <p>
+                          <span className="font-medium">Freelancer:</span>{" "}
+                          {milestone.freelancerAmount.toFixed(2)} tokens
+                        </p>
+                        <p>
+                          <span className="font-medium">Client:</span>{" "}
+                          {milestone.clientAmount.toFixed(2)} tokens
+                        </p>
+                      </div>
+                    ) : null}
+                  </div>
+                ))}
               </div>
             )}
 

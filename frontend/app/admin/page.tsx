@@ -446,42 +446,54 @@ export default function AdminPage() {
             );
             blacklistEvents.push(...chunkEvents);
           } catch (chunkError: any) {
-            console.warn(
-              `Failed to query blacklist events from block ${startBlock} to ${endBlock}:`,
-              chunkError.message
-            );
-            // Try smaller chunk if "too large" error
+            // Silently handle RPC errors - they're expected when RPC is unhealthy
             if (
-              chunkError.message?.includes("too large") ||
-              chunkError.message?.includes("limit")
+              !chunkError.message?.includes(
+                "no backend is currently healthy"
+              ) &&
+              !chunkError.message?.includes("-32011")
             ) {
-              const halfChunk = Math.floor(chunkSize / 2);
-              for (
-                let smallStart = startBlock;
-                smallStart <= endBlock;
-                smallStart += halfChunk
+              // Try smaller chunk if "too large" error
+              if (
+                chunkError.message?.includes("too large") ||
+                chunkError.message?.includes("limit")
               ) {
-                const smallEnd = Math.min(smallStart + halfChunk - 1, endBlock);
-                try {
-                  const blacklistFilter =
-                    contractWithProvider.filters.TokenBlacklisted();
-                  const smallChunkEvents =
-                    await contractWithProvider.queryFilter(
-                      blacklistFilter,
-                      smallStart,
-                      smallEnd
-                    );
-                  blacklistEvents.push(...smallChunkEvents);
-                } catch (smallError) {
-                  console.warn(
-                    `Failed to query blacklist events from block ${smallStart} to ${smallEnd}:`,
-                    smallError
+                const halfChunk = Math.floor(chunkSize / 2);
+                for (
+                  let smallStart = startBlock;
+                  smallStart <= endBlock;
+                  smallStart += halfChunk
+                ) {
+                  const smallEnd = Math.min(
+                    smallStart + halfChunk - 1,
+                    endBlock
                   );
+                  try {
+                    const blacklistFilter =
+                      contractWithProvider.filters.TokenBlacklisted();
+                    const smallChunkEvents =
+                      await contractWithProvider.queryFilter(
+                        blacklistFilter,
+                        smallStart,
+                        smallEnd
+                      );
+                    blacklistEvents.push(...smallChunkEvents);
+                  } catch (smallError: any) {
+                    // Silently handle RPC errors
+                    if (
+                      !smallError.message?.includes(
+                        "no backend is currently healthy"
+                      ) &&
+                      !smallError.message?.includes("-32011")
+                    ) {
+                      // Only log non-RPC errors
+                    }
+                  }
                 }
               }
-            } else {
-              continue;
             }
+            // Skip this chunk if error
+            continue;
           }
         }
         blacklistEvents.forEach((event: any) => {
@@ -612,45 +624,54 @@ export default function AdminPage() {
                 );
                 arbiterEvents.push(...chunkEvents);
               } catch (chunkError: any) {
-                console.warn(
-                  `Failed to query arbiter events from block ${startBlock} to ${endBlock}:`,
-                  chunkError.message
-                );
-                // Try smaller chunk if "too large" error
+                // Silently handle RPC errors - they're expected when RPC is unhealthy
                 if (
-                  chunkError.message?.includes("too large") ||
-                  chunkError.message?.includes("limit")
+                  !chunkError.message?.includes(
+                    "no backend is currently healthy"
+                  ) &&
+                  !chunkError.message?.includes("-32011")
                 ) {
-                  const halfChunk = Math.floor(chunkSize / 2);
-                  for (
-                    let smallStart = startBlock;
-                    smallStart <= endBlock;
-                    smallStart += halfChunk
+                  // Try smaller chunk if "too large" error
+                  if (
+                    chunkError.message?.includes("too large") ||
+                    chunkError.message?.includes("limit")
                   ) {
-                    const smallEnd = Math.min(
-                      smallStart + halfChunk - 1,
-                      endBlock
-                    );
-                    try {
-                      const arbiterFilter =
-                        contractWithProvider.filters.ArbiterAuthorized();
-                      const smallChunkEvents =
-                        await contractWithProvider.queryFilter(
-                          arbiterFilter,
-                          smallStart,
-                          smallEnd
-                        );
-                      arbiterEvents.push(...smallChunkEvents);
-                    } catch (smallError) {
-                      console.warn(
-                        `Failed to query arbiter events from block ${smallStart} to ${smallEnd}:`,
-                        smallError
+                    const halfChunk = Math.floor(chunkSize / 2);
+                    for (
+                      let smallStart = startBlock;
+                      smallStart <= endBlock;
+                      smallStart += halfChunk
+                    ) {
+                      const smallEnd = Math.min(
+                        smallStart + halfChunk - 1,
+                        endBlock
                       );
+                      try {
+                        const arbiterFilter =
+                          contractWithProvider.filters.ArbiterAuthorized();
+                        const smallChunkEvents =
+                          await contractWithProvider.queryFilter(
+                            arbiterFilter,
+                            smallStart,
+                            smallEnd
+                          );
+                        arbiterEvents.push(...smallChunkEvents);
+                      } catch (smallError: any) {
+                        // Silently handle RPC errors
+                        if (
+                          !smallError.message?.includes(
+                            "no backend is currently healthy"
+                          ) &&
+                          !smallError.message?.includes("-32011")
+                        ) {
+                          // Only log non-RPC errors
+                        }
+                      }
                     }
                   }
-                } else {
-                  continue;
                 }
+                // Skip this chunk if error
+                continue;
               }
             }
             console.log(
@@ -709,42 +730,54 @@ export default function AdminPage() {
             );
             revokeEvents.push(...chunkEvents);
           } catch (chunkError: any) {
-            console.warn(
-              `Failed to query revoke events from block ${startBlock} to ${endBlock}:`,
-              chunkError.message
-            );
-            // Try smaller chunk if "too large" error
+            // Silently handle RPC errors - they're expected when RPC is unhealthy
             if (
-              chunkError.message?.includes("too large") ||
-              chunkError.message?.includes("limit")
+              !chunkError.message?.includes(
+                "no backend is currently healthy"
+              ) &&
+              !chunkError.message?.includes("-32011")
             ) {
-              const halfChunk = Math.floor(chunkSize / 2);
-              for (
-                let smallStart = startBlock;
-                smallStart <= endBlock;
-                smallStart += halfChunk
+              // Try smaller chunk if "too large" error
+              if (
+                chunkError.message?.includes("too large") ||
+                chunkError.message?.includes("limit")
               ) {
-                const smallEnd = Math.min(smallStart + halfChunk - 1, endBlock);
-                try {
-                  const revokeFilter =
-                    contractWithProvider.filters.ArbiterRevoked();
-                  const smallChunkEvents =
-                    await contractWithProvider.queryFilter(
-                      revokeFilter,
-                      smallStart,
-                      smallEnd
-                    );
-                  revokeEvents.push(...smallChunkEvents);
-                } catch (smallError) {
-                  console.warn(
-                    `Failed to query revoke events from block ${smallStart} to ${smallEnd}:`,
-                    smallError
+                const halfChunk = Math.floor(chunkSize / 2);
+                for (
+                  let smallStart = startBlock;
+                  smallStart <= endBlock;
+                  smallStart += halfChunk
+                ) {
+                  const smallEnd = Math.min(
+                    smallStart + halfChunk - 1,
+                    endBlock
                   );
+                  try {
+                    const revokeFilter =
+                      contractWithProvider.filters.ArbiterRevoked();
+                    const smallChunkEvents =
+                      await contractWithProvider.queryFilter(
+                        revokeFilter,
+                        smallStart,
+                        smallEnd
+                      );
+                    revokeEvents.push(...smallChunkEvents);
+                  } catch (smallError: any) {
+                    // Silently handle RPC errors
+                    if (
+                      !smallError.message?.includes(
+                        "no backend is currently healthy"
+                      ) &&
+                      !smallError.message?.includes("-32011")
+                    ) {
+                      // Only log non-RPC errors
+                    }
+                  }
                 }
               }
-            } else {
-              continue;
             }
+            // Skip this chunk if error
+            continue;
           }
         }
         revokeEvents.forEach((event: any) => {
