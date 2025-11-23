@@ -15,6 +15,8 @@ export interface Milestone {
   disputeReason?: string; // For disputed: dispute reason, for resolved: resolution reason
   winner?: string; // Winner address (for resolved disputes)
   resolutionReason?: string; // Resolution reason (for resolved disputes)
+  freelancerAmount?: number; // Amount freelancer received (for resolved disputes)
+  clientAmount?: number; // Amount client received (for resolved disputes)
 }
 
 export interface Escrow {
