@@ -6,7 +6,7 @@ import { useAppKit } from "@reown/appkit/react";
 import { useState } from "react";
 
 export function WalletButton() {
-  const { wallet } = useWeb3();
+  const { wallet, switchToCelo } = useWeb3();
   const { open } = useAppKit();
   const [networkIconError, setNetworkIconError] = useState(false);
   const [walletIconError, setWalletIconError] = useState(false);
@@ -14,6 +14,15 @@ export function WalletButton() {
   const handleClick = async () => {
     await open?.();
   };
+
+  // If we have an address but are on the wrong network, prompt a network switch
+  if (wallet.address && !wallet.isConnected) {
+    return (
+      <Button onClick={switchToCelo} variant="default">
+        Switch to Celo
+      </Button>
+    );
+  }
 
   if (!wallet.isConnected || !wallet.address) {
     return (

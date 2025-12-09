@@ -10,10 +10,13 @@ const projectId =
   process.env.NEXT_PUBLIC_REOWN_ID || "1db88bda17adf26df9ab7799871788c4";
 
 // Create metadata
+// In development, use localhost; in production, use the production URL
 const metadata = {
   name: "SecureFlow",
   description: "Secure Escrow Platform for Freelancers",
-  url: "https://secureflow.app",
+  url: typeof window !== "undefined" 
+    ? window.location.origin 
+    : process.env.NEXT_PUBLIC_APP_URL || "https://secureflow.app",
   icons: ["/secureflow-logo.svg"],
 };
 

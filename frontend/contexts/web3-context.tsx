@@ -10,6 +10,7 @@ import {
 import { CELO_MAINNET, CELO_TESTNET, CONTRACTS } from "@/lib/web3/config";
 import type { WalletState } from "@/lib/web3/types";
 import { useToast } from "@/hooks/use-toast";
+import { useAppKit } from "@reown/appkit/react";
 import { ethers } from "ethers";
 
 interface Web3ContextType {
@@ -26,6 +27,7 @@ const Web3Context = createContext<Web3ContextType | undefined>(undefined);
 
 export function Web3Provider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
+  const { address: appKitAddress, isConnected: appKitConnected, chainId: appKitChainId } = useAppKit();
   const [wallet, setWallet] = useState<WalletState>({
     address: null,
     chainId: null,
@@ -34,6 +36,74 @@ export function Web3Provider({ children }: { children: ReactNode }) {
   });
   const [isOwner, setIsOwner] = useState(false);
   const [isSwitchingNetwork, setIsSwitchingNetwork] = useState(false);
+
+  const fetchBalance = async (address: string): Promise<string> => {
+    try {
+      let provider: any = window.ethereum;
+      if (!provider && (window as any).ethereum?.providers) {
+        provider = (window as any).ethereum.providers?.[0] || (window as any).ethereum;
+      }
+      
+      if (provider) {
+        const balance = await provider.request({
+          method: "eth_getBalance",
+          params: [address, "latest"],
+        });
+        return (Number.parseInt(balance, 16) / 1e18).toFixed(4);
+      }
+    } catch (error) {
+      console.error("Failed to fetch balance:", error);
+    }
+    return "0";
+  };
+
+  const checkOwnerStatus = async (address: string) => {
+    try {
+      const knownOwner = "0x3be7fbbdbc73fc4731d60ef09c4ba1a94dc58e41";
+      setIsOwner(address.toLowerCase() === knownOwner.toLowerCase());
+    } catch (error) {
+      setIsOwner(false);
+    }
+  };
+
+  // Sync AppKit connection state with wallet state
+  useEffect(() => {
+    if (appKitConnected && appKitAddress) {
+      const chainIdNumber = appKitChainId ? Number(appKitChainId) : null;
+      const targetChainId = Number.parseInt(CELO_MAINNET.chainId, 16);
+      
+      // Update wallet state from AppKit
+      if (chainIdNumber === targetChainId) {
+        // Fetch balance and update state
+        fetchBalance(appKitAddress).then((balance) => {
+          setWallet({
+            address: appKitAddress,
+            chainId: chainIdNumber,
+            isConnected: true,
+            balance: balance,
+          });
+          checkOwnerStatus(appKitAddress);
+        });
+      } else {
+        // Connected but wrong network
+        setWallet({
+          address: appKitAddress,
+          chainId: chainIdNumber,
+          isConnected: false, // Mark as not connected if on wrong network
+          balance: "0",
+        });
+      }
+    } else {
+      // Not connected via AppKit
+      setWallet({
+        address: null,
+        chainId: null,
+        isConnected: false,
+        balance: "0",
+      });
+      setIsOwner(false);
+    }
+  }, [appKitConnected, appKitAddress, appKitChainId]);
 
   useEffect(() => {
     checkConnection();
@@ -62,6 +132,11 @@ export function Web3Provider({ children }: { children: ReactNode }) {
   }, []);
 
   const checkConnection = async () => {
+    // If AppKit is connected, use that state (handled by the useEffect above)
+    if (appKitConnected && appKitAddress) {
+      return;
+    }
+
     if (typeof window === "undefined") return;
 
     // Try to get provider - check window.ethereum first, then try AppKit's provider
@@ -138,15 +213,6 @@ export function Web3Provider({ children }: { children: ReactNode }) {
     }
   };
 
-  const checkOwnerStatus = async (address: string) => {
-    try {
-      const knownOwner = "0x3be7fbbdbc73fc4731d60ef09c4ba1a94dc58e41";
-
-      setIsOwner(address.toLowerCase() === knownOwner.toLowerCase());
-    } catch (error) {
-      setIsOwner(false);
-    }
-  };
 
   const handleAccountsChanged = (accounts: string[]) => {
     if (accounts.length === 0) {

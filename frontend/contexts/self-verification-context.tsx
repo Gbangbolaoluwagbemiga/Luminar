@@ -6,6 +6,7 @@ import { ethers } from "ethers";
 import { useWeb3 } from "@/contexts/web3-context";
 import { useToast } from "@/hooks/use-toast";
 import { CONTRACTS } from "@/lib/web3/config";
+import { SECUREFLOW_ABI } from "@/lib/web3/abis";
 
 interface SelfVerificationContextType {
   isVerified: boolean;
@@ -27,17 +28,26 @@ export function SelfVerificationProvider({ children }: { children: ReactNode }) 
   const [isVerifying, setIsVerifying] = useState(false);
   const [verificationTimestamp, setVerificationTimestamp] = useState<number | null>(null);
   const [selfApp, setSelfApp] = useState<any>(null);
+  const [verificationAvailable, setVerificationAvailable] = useState<boolean | null>(null); // null = unknown, true/false = checked
 
   // Initialize Self App on mount
   useEffect(() => {
     if (typeof window !== "undefined") {
+      // Skip Self Protocol initialization on localhost (not supported)
+      const isLocalhost = window.location.hostname === "localhost" || 
+                         window.location.hostname === "127.0.0.1" ||
+                         window.location.hostname === "";
+      
+      if (isLocalhost) {
+        console.warn("Self Protocol is disabled on localhost. It will work in production.");
+        return;
+      }
+
       try {
         const app = new SelfAppBuilder({
           appName: "SecureFlow",
           scope: "secureflow-identity", // Unique scope for your app
-          endpoint: typeof window !== "undefined" 
-            ? `${window.location.origin}/api/self/verify` 
-            : "https://your-domain.com/api/self/verify",
+          endpoint: `${window.location.origin}/api/self/verify`,
           userId: wallet.address || ethers.ZeroAddress,
           version: 2,
           disclosures: {
@@ -61,30 +71,63 @@ export function SelfVerificationProvider({ children }: { children: ReactNode }) 
       return;
     }
 
-    try {
-      const contract = getContract(CONTRACTS.SECUREFLOW_ESCROW, [
-        "function selfVerifiedUsers(address) view returns (bool)",
-        "function verificationTimestamp(address) view returns (uint256)",
-      ]);
+    // If we've already determined verification is not available, skip
+    if (verificationAvailable === false) {
+      return;
+    }
 
-      const verified = await contract.call("selfVerifiedUsers", wallet.address);
-      const timestamp = await contract.call("verificationTimestamp", wallet.address);
-
-      setIsVerified(Boolean(verified));
-      setVerificationTimestamp(timestamp ? Number(timestamp) : null);
-
-      // Also check localStorage for quick access
-      if (typeof window !== "undefined") {
-        const cached = localStorage.getItem(`self_verified_${wallet.address.toLowerCase()}`);
-        if (cached) {
+    // Check localStorage first for quick access
+    if (typeof window !== "undefined") {
+      const cached = localStorage.getItem(`self_verified_${wallet.address.toLowerCase()}`);
+      if (cached) {
+        try {
           const cachedData = JSON.parse(cached);
           setIsVerified(cachedData.verified);
           setVerificationTimestamp(cachedData.timestamp);
+          // If we have cached data, we can skip the contract call
+          return;
+        } catch (e) {
+          // Invalid cache, continue to contract check
         }
       }
-    } catch (error) {
-      console.error("Failed to check verification status:", error);
+    }
+
+    // Try to check from contract, but fail silently if not available
+    try {
+      const contract = getContract(CONTRACTS.SECUREFLOW_ESCROW, SECUREFLOW_ABI);
+
+      // Try to call the function, but catch errors silently
+      try {
+        const verified = await contract.call("selfVerifiedUsers", wallet.address);
+        const timestamp = await contract.call("verificationTimestamp", wallet.address);
+
+        setIsVerified(Boolean(verified));
+        setVerificationTimestamp(timestamp ? Number(timestamp) : null);
+        setVerificationAvailable(true); // Mark as available
+
+        // Cache the result
+        if (typeof window !== "undefined") {
+          localStorage.setItem(
+            `self_verified_${wallet.address.toLowerCase()}`,
+            JSON.stringify({
+              verified: Boolean(verified),
+              timestamp: timestamp ? Number(timestamp) : null,
+            })
+          );
+        }
+      } catch (callError: any) {
+        // Function doesn't exist or contract doesn't support it
+        // Mark as unavailable and stop trying
+        setVerificationAvailable(false);
+        setIsVerified(false);
+        setVerificationTimestamp(null);
+      }
+    } catch (error: any) {
+      // Contract call failed entirely - verification not available
+      // Mark as unavailable and stop trying
+      setVerificationAvailable(false);
       setIsVerified(false);
+      setVerificationTimestamp(null);
     }
   };
 
@@ -171,6 +214,21 @@ export function SelfVerificationProvider({ children }: { children: ReactNode }) 
 
   // Self Verification Component (QR Code Wrapper)
   const SelfVerificationComponent = () => {
+    // Check if we're on localhost
+    const isLocalhost = typeof window !== "undefined" && 
+      (window.location.hostname === "localhost" || 
+       window.location.hostname === "127.0.0.1" ||
+       window.location.hostname === "");
+
+    if (isLocalhost) {
+      return (
+        <div className="p-4 text-center text-sm text-muted-foreground">
+          <p className="mb-2">Self Protocol verification is not available on localhost.</p>
+          <p>Please deploy to a production environment to use identity verification.</p>
+        </div>
+      );
+    }
+
     if (!selfApp) {
       return (
         <div className="p-4 text-center text-sm text-muted-foreground">
