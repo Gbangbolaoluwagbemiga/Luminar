@@ -3,32 +3,83 @@
 import { Button } from "@/components/ui/button";
 import { useWeb3 } from "@/contexts/web3-context";
 import { useAppKit } from "@reown/appkit/react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { NetworkSetupDialog } from "@/components/network-setup-dialog";
 
 export function WalletButton() {
   const { wallet, switchToCelo } = useWeb3();
-  const { open } = useAppKit();
+  const { open, isConnected: appKitConnected } = useAppKit();
   const [networkIconError, setNetworkIconError] = useState(false);
   const [walletIconError, setWalletIconError] = useState(false);
+  const [isOpening, setIsOpening] = useState(false);
+  const [showNetworkDialog, setShowNetworkDialog] = useState(false);
+  const [hasCheckedNetwork, setHasCheckedNetwork] = useState(false);
+
+  // Show network dialog when wallet is connected but on wrong network
+  useEffect(() => {
+    if (wallet.address && !wallet.isConnected && !hasCheckedNetwork) {
+      // User is connected but on wrong network - show helpful message
+      // They can click the button to add network if needed
+      setHasCheckedNetwork(true);
+    }
+  }, [wallet.address, wallet.isConnected, hasCheckedNetwork]);
 
   const handleClick = async () => {
-    await open?.();
+    // Prevent multiple simultaneous connection attempts
+    if (isOpening || appKitConnected) {
+      return;
+    }
+    
+    setIsOpening(true);
+    try {
+      await open?.();
+    } catch (error: any) {
+      console.error("Failed to open AppKit:", error);
+      
+      // Check if error is related to network
+      const errorMessage = error.message?.toLowerCase() || "";
+      if (errorMessage.includes("network") || errorMessage.includes("chain")) {
+        setShowNetworkDialog(true);
+      }
+    } finally {
+      // Reset after a delay to allow AppKit modal to open
+      setTimeout(() => setIsOpening(false), 1000);
+    }
   };
 
-  // If we have an address but are on the wrong network, prompt a network switch
+  // If we have an address but are on the wrong network, show options
   if (wallet.address && !wallet.isConnected) {
     return (
-      <Button onClick={switchToCelo} variant="default">
-        Switch to Celo
-      </Button>
+      <>
+        <Button 
+          onClick={() => setShowNetworkDialog(true)} 
+          variant="default"
+          className="mr-2"
+        >
+          Add Celo Network
+        </Button>
+        <Button onClick={switchToCelo} variant="outline">
+          Switch to Celo
+        </Button>
+        <NetworkSetupDialog 
+          open={showNetworkDialog} 
+          onOpenChange={setShowNetworkDialog} 
+        />
+      </>
     );
   }
 
   if (!wallet.isConnected || !wallet.address) {
     return (
-      <Button onClick={handleClick} variant="default">
-        Connect Wallet
-      </Button>
+      <>
+        <Button onClick={handleClick} variant="default">
+          Connect Wallet
+        </Button>
+        <NetworkSetupDialog 
+          open={showNetworkDialog} 
+          onOpenChange={setShowNetworkDialog} 
+        />
+      </>
     );
   }
 

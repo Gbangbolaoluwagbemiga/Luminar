@@ -19,6 +19,7 @@ interface Web3ContextType {
   disconnectWallet: () => void;
   switchToCelo: () => Promise<void>;
   switchToCeloTestnet: () => Promise<void>;
+  addCeloNetwork: () => Promise<boolean>;
   getContract: (address: string, abi: any) => any;
   isOwner: boolean;
 }
@@ -36,6 +37,42 @@ export function Web3Provider({ children }: { children: ReactNode }) {
   });
   const [isOwner, setIsOwner] = useState(false);
   const [isSwitchingNetwork, setIsSwitchingNetwork] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(false);
+
+  // Helper to check if Celo network exists in wallet
+  const checkCeloNetworkExists = async (): Promise<boolean> => {
+    if (typeof window === "undefined" || !window.ethereum) return false;
+    
+    try {
+      const chainId = await window.ethereum.request({ method: "eth_chainId" });
+      const chainIdNumber = Number.parseInt(chainId, 16);
+      const targetChainId = Number.parseInt(CELO_MAINNET.chainId, 16);
+      
+      // If already on Celo, network exists
+      if (chainIdNumber === targetChainId) return true;
+      
+      // Try to switch - if it fails with 4902, network doesn't exist
+      // We catch the error to check the code without actually switching
+      try {
+        await window.ethereum.request({
+          method: "wallet_switchEthereumChain",
+          params: [{ chainId: CELO_MAINNET.chainId }],
+        });
+        // If switch succeeds, network exists (but we're now on it)
+        return true;
+      } catch (error: any) {
+        // 4902 means network not found/not added
+        if (error.code === 4902) {
+          return false;
+        }
+        // Other errors might mean network exists but switch was rejected
+        // In that case, assume network exists
+        return true;
+      }
+    } catch {
+      return false;
+    }
+  };
 
   const fetchBalance = async (address: string): Promise<string> => {
     try {
@@ -91,6 +128,13 @@ export function Web3Provider({ children }: { children: ReactNode }) {
           chainId: chainIdNumber,
           isConnected: false, // Mark as not connected if on wrong network
           balance: "0",
+        });
+        
+        // Show helpful message
+        toast({
+          title: "Wrong Network",
+          description: "Please switch to Celo Mainnet or add it if it's not in your wallet.",
+          variant: "destructive",
         });
       }
     } else {
@@ -237,6 +281,18 @@ export function Web3Provider({ children }: { children: ReactNode }) {
       return;
     }
 
+    // Prevent duplicate connection requests
+    if (isConnecting) {
+      return;
+    }
+
+    // If AppKit is already connected, don't make another request
+    if (appKitConnected && appKitAddress) {
+      return;
+    }
+
+    setIsConnecting(true);
+
     try {
       const accounts = await window.ethereum.request({
         method: "eth_requestAccounts",
@@ -349,11 +405,30 @@ export function Web3Provider({ children }: { children: ReactNode }) {
         )}...${accounts[0].slice(-4)}`,
       });
     } catch (error: any) {
-      toast({
-        title: "Connection failed",
-        description: error.message || "Failed to connect wallet",
-        variant: "destructive",
-      });
+      // Check if error is related to network not being available
+      const errorMessage = error.message?.toLowerCase() || "";
+      const isNetworkError = 
+        error.code === 4902 ||
+        errorMessage.includes("network") ||
+        errorMessage.includes("chain") ||
+        errorMessage.includes("not been added") ||
+        errorMessage.includes("unrecognized chain");
+
+      if (isNetworkError) {
+        toast({
+          title: "Celo Network Required",
+          description: "Please add Celo Mainnet to your wallet to continue. Click 'Add Celo Network' button.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Connection failed",
+          description: error.message || "Failed to connect wallet. Please try again.",
+          variant: "destructive",
+        });
+      }
+    } finally {
+      setIsConnecting(false);
     }
   };
 
@@ -437,6 +512,61 @@ export function Web3Provider({ children }: { children: ReactNode }) {
       }
     } finally {
       setIsSwitchingNetwork(false);
+    }
+  };
+
+  const addCeloNetwork = async (): Promise<boolean> => {
+    if (typeof window === "undefined" || !window.ethereum) {
+      toast({
+        title: "Wallet not found",
+        description: "Please install MetaMask or another Web3 wallet",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    try {
+      await window.ethereum.request({
+        method: "wallet_addEthereumChain",
+        params: [CELO_MAINNET],
+      });
+
+      toast({
+        title: "Celo Network Added! 🎉",
+        description: "Celo Mainnet has been added to your wallet. Please switch to it to continue.",
+      });
+
+      // After adding, try to switch to it
+      setTimeout(async () => {
+        try {
+          await window.ethereum.request({
+            method: "wallet_switchEthereumChain",
+            params: [{ chainId: CELO_MAINNET.chainId }],
+          });
+        } catch (switchError) {
+          // User might need to switch manually
+          console.log("Auto-switch after add failed, user can switch manually");
+        }
+      }, 1000);
+
+      return true;
+    } catch (error: any) {
+      console.error("Failed to add Celo network:", error);
+      
+      if (error.code === 4001) {
+        toast({
+          title: "Request cancelled",
+          description: "You cancelled adding the Celo network",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Failed to add network",
+          description: error.message || "Please add Celo Mainnet manually in your wallet settings",
+          variant: "destructive",
+        });
+      }
+      return false;
     }
   };
 
@@ -709,6 +839,7 @@ export function Web3Provider({ children }: { children: ReactNode }) {
         disconnectWallet,
         switchToCelo,
         switchToCeloTestnet,
+        addCeloNetwork,
         getContract,
         isOwner,
       }}

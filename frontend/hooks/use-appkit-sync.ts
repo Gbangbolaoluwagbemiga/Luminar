@@ -12,19 +12,11 @@ export function useAppKitSync() {
   // Sync AppKit connection state with Web3 context
   useEffect(() => {
     // If AppKit just connected and Web3 context doesn't know about it
+    // Don't call eth_requestAccounts here - AppKit already handled the connection
+    // Just let the Web3 context's checkConnection pick it up via polling
     if (isConnected && address && !wallet.isConnected) {
-      // Force a connection check by requesting accounts
-      // This will trigger the Web3 context to update
-      if (typeof window !== "undefined") {
-        // Try multiple ways to get the provider
-        const provider =
-          window.ethereum || (window as any).ethereum?.providers?.[0];
-        if (provider) {
-          provider.request({ method: "eth_requestAccounts" }).catch(() => {
-            // Ignore errors - connection check will handle it
-          });
-        }
-      }
+      // The Web3 context will detect the connection via its polling mechanism
+      // No need to trigger another request that could conflict
     }
 
     // If AppKit disconnected and Web3 context still thinks we're connected
