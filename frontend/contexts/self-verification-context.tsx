@@ -64,9 +64,12 @@ export function SelfVerificationProvider({ children }: { children: ReactNode }) 
     }
 
     try {
-      // According to Self Protocol docs: https://docs.self.xyz/frontend-integration/qrcode-sdk-api-reference
+      // According to Self Protocol docs: https://docs.self.xyz/frontend-integration/disclosure-configs
       // Required fields: appName, logoBase64, endpointType, endpoint, scope, userId, userIdType, disclosures
       // Using 'https' endpointType - backend verifies proof then calls contract
+      // disclosures must contain VALID fields:
+      // - Verification requirements: minimumAge, excludedCountries, ofac
+      // - Data disclosures: name, nationality, gender, date_of_birth, passport_number, expiry_date, issuing_state
       const app = new SelfAppBuilder({
         appName: "SecureFlow",
         logoBase64: `${window.location.origin}/secureflow-logo.svg`, // Logo URL (can be URL or base64)
@@ -76,11 +79,24 @@ export function SelfVerificationProvider({ children }: { children: ReactNode }) 
         userId: wallet.address.toLowerCase(), // Use connected wallet address (lowercase for consistency)
         userIdType: 'hex', // Address is hex format
         version: 2,
-        // disclosures field is REQUIRED - specifies what to verify
-        // humanity: true requests proof that the user is human (basic identity check)
-        // This is the simplest disclosure type that works with passport/ID verification
+        // disclosures field is REQUIRED - specifies verification requirements and data disclosures
+        // minimumAge: 18 ensures user is at least 18 and has a valid passport/ID
+        // This requires the user to have a valid government-issued ID in their Self app
         disclosures: {
-          humanity: true,
+          // Verification requirements
+          minimumAge: 18, // User must be at least 18 years old
+          // ofac: true, // Optional: Enable OFAC sanctions screening
+          // excludedCountries: [], // Optional: Block specific countries
+          
+          // Data disclosures - set to false to minimize data collection
+          // Only request data if your application requires it
+          name: false, // Do not request user's name
+          nationality: false, // Do not request nationality
+          gender: false, // Do not request gender
+          date_of_birth: false, // Do not request date of birth
+          passport_number: false, // Do not request passport number
+          expiry_date: false, // Do not request expiry date
+          issuing_state: false, // Do not request issuing state
         },
       }).build();
       
@@ -254,7 +270,7 @@ export function SelfVerificationProvider({ children }: { children: ReactNode }) 
             setVerificationTimestamp(timestamp ? Number(timestamp) : null);
             
             // Cache the result
-            if (typeof window !== "undefined") {
+            if (typeof window !== "undefined" && wallet.address) {
               localStorage.setItem(
                 `self_verified_${wallet.address.toLowerCase()}`,
                 JSON.stringify({
@@ -350,7 +366,17 @@ export function SelfVerificationProvider({ children }: { children: ReactNode }) 
 
     return (
       <div className="flex flex-col items-center gap-4 p-6">
-        <SelfQRcodeWrapper selfApp={selfApp} />
+        <SelfQRcodeWrapper 
+          selfApp={selfApp}
+          onSuccess={() => {
+            // Verification success is handled by polling mechanism
+            console.log("Self Protocol QR: Success callback triggered");
+          }}
+          onError={(error: any) => {
+            // Error handling - log but don't interrupt polling
+            console.error("Self Protocol QR: Error callback triggered", error);
+          }}
+        />
         <div className="text-sm text-muted-foreground text-center max-w-md space-y-2">
           <p>
             Scan this QR code with the Self mobile app to verify your identity.
@@ -359,11 +385,12 @@ export function SelfVerificationProvider({ children }: { children: ReactNode }) 
             <p className="font-semibold text-blue-900 dark:text-blue-100">Requirements:</p>
             <ul className="list-disc list-inside space-y-1 text-blue-800 dark:text-blue-200">
               <li>Self mobile app installed</li>
-              <li>Valid passport or government ID added to Self app</li>
+              <li>Valid passport or government ID (NFC-enabled) added to Self app</li>
+              <li>Must be at least 18 years old</li>
               <li>Stable internet connection</li>
             </ul>
             <p className="mt-2 text-blue-700 dark:text-blue-300">
-              If proof generation fails, ensure your ID is properly set up in the Self app.
+              The verification will confirm your age and identity using your government-issued ID.
             </p>
           </div>
         </div>
