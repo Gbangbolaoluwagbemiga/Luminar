@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from "react";
 import { SelfQRcodeWrapper, SelfAppBuilder } from "@selfxyz/qrcode";
 import { ethers } from "ethers";
 import { useWeb3 } from "@/contexts/web3-context";
@@ -29,6 +29,8 @@ export function SelfVerificationProvider({ children }: { children: ReactNode }) 
   const [verificationTimestamp, setVerificationTimestamp] = useState<number | null>(null);
   const [selfApp, setSelfApp] = useState<any>(null);
   const [verificationAvailable, setVerificationAvailable] = useState<boolean | null>(null); // null = unknown, true/false = checked
+  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const hasStartedVerificationRef = useRef(false);
 
   // Initialize Self App on mount
   useEffect(() => {
@@ -95,16 +97,18 @@ export function SelfVerificationProvider({ children }: { children: ReactNode }) 
     }
   }, [wallet.address, wallet.isConnected]);
 
-  // Check verification status from contract
-  const checkVerificationStatus = async () => {
+  // Check verification status from contract (only updates state if changed)
+  const checkVerificationStatus = async (skipStateUpdate = false) => {
     if (!wallet.isConnected || !wallet.address) {
-      setIsVerified(false);
-      return;
+      if (!skipStateUpdate) {
+        setIsVerified(false);
+      }
+      return false;
     }
 
     // If we've already determined verification is not available, skip
     if (verificationAvailable === false) {
-      return;
+      return false;
     }
 
     // Check localStorage first for quick access
@@ -113,10 +117,15 @@ export function SelfVerificationProvider({ children }: { children: ReactNode }) 
       if (cached) {
         try {
           const cachedData = JSON.parse(cached);
-          setIsVerified(cachedData.verified);
-          setVerificationTimestamp(cachedData.timestamp);
-          // If we have cached data, we can skip the contract call
-          return;
+          const cachedVerified = cachedData.verified;
+          const cachedTimestamp = cachedData.timestamp;
+          
+          // Only update state if value changed
+          if (!skipStateUpdate) {
+            setIsVerified(cachedVerified);
+            setVerificationTimestamp(cachedTimestamp);
+          }
+          return cachedVerified;
         } catch (e) {
           // Invalid cache, continue to contract check
         }
@@ -132,34 +141,58 @@ export function SelfVerificationProvider({ children }: { children: ReactNode }) 
         const verified = await contract.call("selfVerifiedUsers", wallet.address);
         const timestamp = await contract.call("verificationTimestamp", wallet.address);
 
-        setIsVerified(Boolean(verified));
-        setVerificationTimestamp(timestamp ? Number(timestamp) : null);
-        setVerificationAvailable(true); // Mark as available
+        const isVerifiedValue = Boolean(verified);
+        const timestampValue = timestamp ? Number(timestamp) : null;
+        
+        // Only update state if value changed or not skipping
+        if (!skipStateUpdate) {
+          setIsVerified(isVerifiedValue);
+          setVerificationTimestamp(timestampValue);
+          setVerificationAvailable(true); // Mark as available
 
-        // Cache the result
-        if (typeof window !== "undefined") {
-          localStorage.setItem(
-            `self_verified_${wallet.address.toLowerCase()}`,
-            JSON.stringify({
-              verified: Boolean(verified),
-              timestamp: timestamp ? Number(timestamp) : null,
-            })
-          );
+          // Cache the result
+          if (typeof window !== "undefined") {
+            localStorage.setItem(
+              `self_verified_${wallet.address.toLowerCase()}`,
+              JSON.stringify({
+                verified: isVerifiedValue,
+                timestamp: timestampValue,
+              })
+            );
+          }
         }
+        
+        return isVerifiedValue;
       } catch (callError: any) {
         // Function doesn't exist or contract doesn't support it
         // Mark as unavailable and stop trying
-        setVerificationAvailable(false);
-        setIsVerified(false);
-        setVerificationTimestamp(null);
+        if (!skipStateUpdate) {
+          setVerificationAvailable(false);
+          setIsVerified(false);
+          setVerificationTimestamp(null);
+        }
+        return false;
       }
     } catch (error: any) {
       // Contract call failed entirely - verification not available
       // Mark as unavailable and stop trying
-      setVerificationAvailable(false);
-      setIsVerified(false);
-      setVerificationTimestamp(null);
+      if (!skipStateUpdate) {
+        setVerificationAvailable(false);
+        setIsVerified(false);
+        setVerificationTimestamp(null);
+      }
+      return false;
     }
+  };
+
+  // Stop polling function
+  const stopPolling = () => {
+    if (pollIntervalRef.current) {
+      clearInterval(pollIntervalRef.current);
+      pollIntervalRef.current = null;
+    }
+    setIsVerifying(false);
+    hasStartedVerificationRef.current = false;
   };
 
   // Verify identity using Self Protocol
@@ -182,7 +215,11 @@ export function SelfVerificationProvider({ children }: { children: ReactNode }) 
       return;
     }
 
+    // Stop any existing polling
+    stopPolling();
+
     setIsVerifying(true);
+    hasStartedVerificationRef.current = true;
 
     try {
       // The QR code component will handle the verification flow
@@ -193,38 +230,72 @@ export function SelfVerificationProvider({ children }: { children: ReactNode }) 
         description: "Scan the QR code with the Self app to verify your identity",
       });
 
-      // Poll for verification status every 2 seconds for up to 5 minutes
-      const maxAttempts = 150; // 5 minutes / 2 seconds
+      // Poll for verification status every 10 seconds
+      const maxAttempts = 30; // 5 minutes / 10 seconds = 30 attempts
       let attempts = 0;
 
-      const pollInterval = setInterval(async () => {
+      pollIntervalRef.current = setInterval(async () => {
+        if (!hasStartedVerificationRef.current) {
+          stopPolling();
+          return;
+        }
+
         attempts++;
-        await checkVerificationStatus();
-
-        if (isVerified || attempts >= maxAttempts) {
-          clearInterval(pollInterval);
-          setIsVerifying(false);
-
-          if (isVerified) {
+        
+        // Check verification status (skip state update during polling to prevent re-renders)
+        const isNowVerified = await checkVerificationStatus(true);
+        
+        // Only update state if verification is complete
+        if (isNowVerified) {
+          // Get fresh timestamp
+          try {
+            const contract = getContract(CONTRACTS.SECUREFLOW_ESCROW, SECUREFLOW_ABI);
+            const timestamp = await contract.call("verificationTimestamp", wallet.address);
+            
+            setIsVerified(true);
+            setVerificationTimestamp(timestamp ? Number(timestamp) : null);
+            
+            // Cache the result
+            if (typeof window !== "undefined") {
+              localStorage.setItem(
+                `self_verified_${wallet.address.toLowerCase()}`,
+                JSON.stringify({
+                  verified: true,
+                  timestamp: timestamp ? Number(timestamp) : null,
+                })
+              );
+            }
+            
+            stopPolling();
             toast({
               title: "Verification successful",
               description: "Your identity has been verified!",
             });
-          } else if (attempts >= maxAttempts) {
+            return;
+          } catch (error) {
+            // Still mark as verified even if timestamp fetch fails
+            setIsVerified(true);
+            stopPolling();
             toast({
-              title: "Verification timeout",
-              description: "Verification timed out. Please try again.",
-              variant: "destructive",
+              title: "Verification successful",
+              description: "Your identity has been verified!",
             });
+            return;
           }
         }
-      }, 2000);
 
-      // Cleanup on unmount
-      return () => clearInterval(pollInterval);
+        if (attempts >= maxAttempts) {
+          stopPolling();
+          toast({
+            title: "Verification timeout",
+            description: "Verification timed out. Please try again.",
+            variant: "destructive",
+          });
+        }
+      }, 10000); // Poll every 10 seconds
     } catch (error: any) {
       console.error("Verification error:", error);
-      setIsVerifying(false);
+      stopPolling();
       toast({
         title: "Verification failed",
         description: error.message || "Failed to start verification",
@@ -233,18 +304,29 @@ export function SelfVerificationProvider({ children }: { children: ReactNode }) 
     }
   };
 
-  // Check verification status when wallet connects
+  // Cleanup polling on unmount or when wallet changes
+  useEffect(() => {
+    return () => {
+      stopPolling();
+    };
+  }, [wallet.address]);
+
+  // Check verification status when wallet connects (but don't poll if already verifying)
   useEffect(() => {
     if (wallet.isConnected && wallet.address) {
-      checkVerificationStatus();
+      // Only check if we're not already polling
+      if (!hasStartedVerificationRef.current) {
+        checkVerificationStatus();
+      }
     } else {
       setIsVerified(false);
       setVerificationTimestamp(null);
+      stopPolling();
     }
   }, [wallet.isConnected, wallet.address]);
 
-  // Self Verification Component (QR Code Wrapper)
-  const SelfVerificationComponent = () => {
+  // Self Verification Component (QR Code Wrapper) - Stable component to prevent QR regeneration
+  const SelfVerificationComponent = React.useCallback(() => {
     // Check if we're on localhost
     const isLocalhost = typeof window !== "undefined" && 
       (window.location.hostname === "localhost" || 
@@ -277,7 +359,7 @@ export function SelfVerificationProvider({ children }: { children: ReactNode }) 
         </p>
       </div>
     );
-  };
+  }, [selfApp]); // Only recreate if selfApp changes
 
   return (
     <SelfVerificationContext.Provider

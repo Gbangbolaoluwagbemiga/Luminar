@@ -42,6 +42,8 @@ export function SelfVerificationDialog({
 
   const handleCheckStatus = async () => {
     await checkVerificationStatus();
+    // Show a message that status was checked
+    // Don't keep checking automatically
   };
 
   return (
