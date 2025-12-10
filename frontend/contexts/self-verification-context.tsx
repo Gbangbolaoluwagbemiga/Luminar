@@ -66,11 +66,12 @@ export function SelfVerificationProvider({ children }: { children: ReactNode }) 
     try {
       // According to Self Protocol docs: https://docs.self.xyz/frontend-integration/qrcode-sdk-api-reference
       // Required fields: appName, logoBase64, endpointType, endpoint, scope, userId, userIdType, disclosures
+      // Using 'https' endpointType - backend verifies proof then calls contract
       const app = new SelfAppBuilder({
         appName: "SecureFlow",
         logoBase64: `${window.location.origin}/secureflow-logo.svg`, // Logo URL (can be URL or base64)
-        endpointType: 'https', // 'https' for backend verification, 'celo' for on-chain
-        endpoint: `${window.location.origin}/api/self/verify`, // Backend API endpoint
+        endpointType: 'https', // 'https' for backend verification
+        endpoint: `${window.location.origin}/api/self/verify`, // Backend API endpoint - MUST be publicly accessible
         scope: "secureflow-identity", // Unique scope for your app
         userId: wallet.address.toLowerCase(), // Use connected wallet address (lowercase for consistency)
         userIdType: 'hex', // Address is hex format

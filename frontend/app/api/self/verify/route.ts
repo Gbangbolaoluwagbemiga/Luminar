@@ -46,12 +46,73 @@ function getContract() {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { proof, pubSignals, userContextData, userAddress } = body;
+    // Try to get raw body first to see what we're actually receiving
+    const contentType = request.headers.get("content-type") || "";
+    let body: any;
+    
+    if (contentType.includes("application/json")) {
+      try {
+        body = await request.json();
+      } catch (parseError) {
+        const text = await request.text();
+        console.error("❌ Failed to parse JSON:", text.substring(0, 500));
+        return NextResponse.json(
+          { error: "Invalid JSON format", received: text.substring(0, 200) },
+          { status: 400 }
+        );
+      }
+    } else {
+      // Try to read as text and parse
+      const text = await request.text();
+      try {
+        body = JSON.parse(text);
+      } catch {
+        return NextResponse.json(
+          { error: "Invalid request format", contentType, received: text.substring(0, 200) },
+          { status: 400 }
+        );
+      }
+    }
+    
+    // Log the received body for debugging
+    console.log("📥 Self Protocol verification request:");
+    console.log("Content-Type:", contentType);
+    console.log("Body keys:", Object.keys(body || {}));
+    console.log("Body preview:", JSON.stringify(body).substring(0, 1000));
+    
+    // Self Protocol SDK sends data in specific format according to docs
+    // Check all possible field name variations
+    const proof = body.proof || body.Proof || body.proofData || body.proof_data;
+    const pubSignals = body.pubSignals || body.pub_signals || body.publicSignals || body.public_signals;
+    const userContextData = body.userContextData || body.user_context_data || body.contextData || body.context;
+    const userAddress = body.userAddress || body.user_address || body.address || body.userId || body.user_id || body.identifier;
+    
+    // Check nested structures
+    const nestedData = body.data || body.verification || body.result || body.payload;
+    const nestedProof = nestedData?.proof;
+    const nestedPubSignals = nestedData?.pubSignals || nestedData?.pub_signals || nestedData?.publicSignals;
+    const nestedUserAddress = nestedData?.userAddress || nestedData?.user_address || nestedData?.address || nestedData?.userId;
 
-    if (!proof || !pubSignals || !userAddress) {
+    const finalProof = proof || nestedProof;
+    const finalPubSignals = pubSignals || nestedPubSignals;
+    const finalUserAddress = userAddress || nestedUserAddress;
+    const finalUserContextData = userContextData || nestedData?.context || {};
+
+    if (!finalProof || !finalPubSignals || !finalUserAddress) {
+      console.error("❌ Missing required fields:");
+      console.error("Body structure:", JSON.stringify(body, null, 2));
       return NextResponse.json(
-        { error: "Missing required fields: proof, pubSignals, userAddress" },
+        { 
+          error: "Missing required fields: proof, pubSignals, userAddress",
+          debug: {
+            hasProof: !!finalProof,
+            hasPubSignals: !!finalPubSignals,
+            hasUserAddress: !!finalUserAddress,
+            bodyKeys: Object.keys(body || {}),
+            contentType,
+            bodySample: JSON.stringify(body).substring(0, 500)
+          }
+        },
         { status: 400 }
       );
     }
@@ -59,12 +120,29 @@ export async function POST(request: NextRequest) {
     // Verify the proof using Self Protocol
     try {
       const selfVerifier = await getVerifier();
+      
+      // Determine attestation ID - check multiple possible locations
+      const attestationId = finalProof.attestationId || 
+                           finalProof.attestation_id || 
+                           body.attestationId ||
+                           body.attestation_id ||
+                           "minimumAge"; // Default to minimumAge (since we request minimumAge: 18)
+      
+      console.log("🔍 Verifying with:", {
+        attestationId,
+        hasProof: !!finalProof,
+        hasPubSignals: !!finalPubSignals,
+        userAddress: finalUserAddress
+      });
+      
       const verificationResult = await selfVerifier.verify(
-        proof.attestationId || "humanity", // Default to humanity verification
-        proof,
-        pubSignals,
-        userContextData || {}
+        attestationId,
+        finalProof,
+        finalPubSignals,
+        finalUserContextData
       );
+      
+      console.log("✅ Verification result:", verificationResult);
 
       if (!verificationResult.valid) {
         return NextResponse.json(
@@ -81,7 +159,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: true,
         verified: true,
-        userAddress: userAddress.toLowerCase(),
+        userAddress: finalUserAddress.toLowerCase(),
         timestamp: Math.floor(Date.now() / 1000),
         message: "Verification successful. Please confirm the transaction to update your status on-chain.",
       });
