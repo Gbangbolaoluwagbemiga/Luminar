@@ -115,6 +115,17 @@ export default function CreateEscrowPage() {
           name: "USD Coin",
           symbol: "USDC",
         },
+        // GoodDollar (G$) - Update address once found
+        // This will be populated automatically once G$ is whitelisted
+        // or manually add the address here after finding it
+        ...(CONTRACTS.GDOLLAR_CELO && CONTRACTS.GDOLLAR_CELO !== ZERO_ADDRESS
+          ? {
+              [CONTRACTS.GDOLLAR_CELO.toLowerCase()]: {
+                name: "GoodDollar",
+                symbol: "G$",
+              },
+            }
+          : {}),
       };
 
       const contract = getContract(CONTRACTS.SECUREFLOW_ESCROW, SECUREFLOW_ABI);
