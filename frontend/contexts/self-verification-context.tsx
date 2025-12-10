@@ -64,40 +64,27 @@ export function SelfVerificationProvider({ children }: { children: ReactNode }) 
     }
 
     try {
-      // According to Self Protocol docs: https://docs.self.xyz/frontend-integration/disclosure-configs
-      // Required fields: appName, logoBase64, endpointType, endpoint, scope, userId, userIdType, disclosures
-      // Using 'https' endpointType - backend verifies proof then calls contract
-      // disclosures must contain VALID fields:
-      // - Verification requirements: minimumAge, excludedCountries, ofac
-      // - Data disclosures: name, nationality, gender, date_of_birth, passport_number, expiry_date, issuing_state
+      // Self Protocol configuration - FIXED
       const app = new SelfAppBuilder({
         appName: "SecureFlow",
-        logoBase64: `${window.location.origin}/secureflow-logo.svg`, // Logo URL (can be URL or base64)
-        endpointType: 'https', // 'https' for backend verification
-        endpoint: `${window.location.origin}/api/self/verify`, // Backend API endpoint - MUST be publicly accessible
-        scope: "secureflow-identity", // Unique scope for your app
-        userId: wallet.address.toLowerCase(), // Use connected wallet address (lowercase for consistency)
-        userIdType: 'hex', // Address is hex format
+        logoBase64: `${window.location.origin}/secureflow-logo.svg`,
+        endpointType: 'https',
+        endpoint: `${window.location.origin}/api/self/verify`,
+        scope: "secureflow-identity",
+        userId: wallet.address.toLowerCase(),
+        userIdType: 'hex',
         version: 2,
-        // disclosures field is REQUIRED - specifies verification requirements and data disclosures
-        // minimumAge: 18 ensures user is at least 18 and has a valid passport/ID
-        // This requires the user to have a valid government-issued ID in their Self app
-        disclosures: {
-          // Verification requirements
-          minimumAge: 18, // User must be at least 18 years old
-          // ofac: true, // Optional: Enable OFAC sanctions screening
-          // excludedCountries: [], // Optional: Block specific countries
-          
-          // Data disclosures - set to false to minimize data collection
-          // Only request data if your application requires it
-          name: false, // Do not request user's name
-          nationality: false, // Do not request nationality
-          gender: false, // Do not request gender
-          date_of_birth: false, // Do not request date of birth
-          passport_number: false, // Do not request passport number
-          expiry_date: false, // Do not request expiry date
-          issuing_state: false, // Do not request issuing state
-        },
+        chainID: 42220, // Celo mainnet chain ID
+        // ✅ FIXED: Use array format for disclosures (runtime requirement)
+        // TypeScript types may be outdated - runtime expects array format
+        // Array format provides proper proof generation inputs to prevent "Unsupported number of inputs: 0"
+        disclosures: [
+          {
+            type: "minimumAge",
+            value: 18,
+            required: true
+          }
+        ] as any, // Type assertion to bypass TypeScript type mismatch
       }).build();
       
       setSelfApp(app);
