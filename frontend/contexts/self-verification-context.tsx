@@ -64,27 +64,19 @@ export function SelfVerificationProvider({ children }: { children: ReactNode }) 
     }
 
     try {
-      // Self Protocol configuration - FIXED
       const app = new SelfAppBuilder({
         appName: "SecureFlow",
         logoBase64: `${window.location.origin}/secureflow-logo.svg`,
-        endpointType: 'https',
+        endpointType: (process.env.NEXT_PUBLIC_SELF_ENDPOINT_TYPE as any) || 'https',
         endpoint: `${window.location.origin}/api/self/verify`,
         scope: "secureflow-identity",
         userId: wallet.address.toLowerCase(),
         userIdType: 'hex',
         version: 2,
-        chainID: 42220, // Celo mainnet chain ID
-        // ✅ FIXED: Use array format for disclosures (runtime requirement)
-        // TypeScript types may be outdated - runtime expects array format
-        // Array format provides proper proof generation inputs to prevent "Unsupported number of inputs: 0"
-        disclosures: [
-          {
-            type: "minimumAge",
-            value: 18,
-            required: true
-          }
-        ] as any, // Type assertion to bypass TypeScript type mismatch
+        chainID: 42220,
+        disclosures: {
+          minimumAge: 18
+        } as any,
       }).build();
       
       setSelfApp(app);
@@ -333,8 +325,13 @@ export function SelfVerificationProvider({ children }: { children: ReactNode }) 
   }, []);
 
   const handleQRError = useCallback((error: any) => {
-    // Error handling - log but don't interrupt polling
     console.error("Self Protocol QR: Error callback triggered", error);
+    const reason = error?.reason || error?.message || "Proof generation failed";
+    toast({
+      title: "Verification error",
+      description: typeof reason === "string" ? reason : "Verification failed. Ensure your Self app has a valid NFC passport and try again.",
+      variant: "destructive",
+    });
   }, []);
 
   // Self Verification Component (QR Code Wrapper) - Stable component to prevent QR regeneration
@@ -422,4 +419,3 @@ export function useSelfVerification() {
   }
   return context;
 }
-

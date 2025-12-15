@@ -12,22 +12,19 @@ async function getVerifier() {
   if (verifierError) throw verifierError;
   
   try {
-    // Dynamic import to avoid build-time issues
-    const { SelfBackendVerifier } = await import("@selfxyz/core");
-    
-    // Configure allowed attestation types
-    // Attestation IDs: 1 = Electronic Passport, 2 = EU ID Card, 3 = (other type)
-    // Use empty Map to accept all attestation types - let the mobile app choose
-    // SelfBackendVerifier expects Map<1 | 2 | 3, boolean> type
-    const allowedIds = new Map<1 | 2 | 3, boolean>(); // Empty = accept all
-    
+    const { SelfBackendVerifier, AllIds, DefaultConfigStore } = await import("@selfxyz/core");
+    const mockPassport = (
+      process.env.NEXT_PUBLIC_SELF_ENDPOINT_TYPE === 'staging_https' ||
+      process.env.SELF_DEV_MODE === 'true' ||
+      process.env.NODE_ENV !== 'production'
+    );
     verifier = new SelfBackendVerifier(
-      "secureflow-identity", // Your app scope
-      "", // Self Protocol doesn't require an API endpoint - proofs are verified locally
-      process.env.NODE_ENV === "development", // devMode
-      allowedIds, // Empty map = accept all attestation types
-      null as any, // configStorage - implement based on Self Protocol docs
-      "hex" // identifier type - using 'hex' since we use wallet addresses
+      "secureflow-identity",
+      "",
+      mockPassport,
+      AllIds,
+      new DefaultConfigStore({ minimumAge: 18, excludedCountries: [], ofac: false }),
+      "hex"
     );
     
     return verifier;
@@ -316,4 +313,3 @@ export async function GET() {
     contract: CONTRACTS.SECUREFLOW_ESCROW,
   });
 }
-

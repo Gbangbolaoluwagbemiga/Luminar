@@ -88,6 +88,8 @@
     "@types/react-dom": "^19",
     "autoprefixer": "^10.4.20",
     "chai": "latest",
+    "eslint": "9.39.2",
+    "eslint-config-next": "16.0.10",
     "hardhat": "latest",
     "hardhat-gas-reporter": "latest",
     "postcss": "^8.5",
