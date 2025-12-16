@@ -349,9 +349,21 @@ export function SelfVerificationProvider({ children }: { children: ReactNode }) 
   const handleQRError = useCallback((error: any) => {
     console.error("Self Protocol QR: Error callback triggered", error);
     const reason = error?.reason || error?.message || "Proof generation failed";
+    const isStaging = typeof process !== "undefined" && (process.env.NEXT_PUBLIC_SELF_ENDPOINT_TYPE || "").includes("staging");
+    const hint =
+      typeof reason === "string" && reason.includes("Unsupported number of inputs")
+        ? "This usually means the Self app has no document loaded for staging. Add a mock passport in the Self app settings and retry."
+        : (isStaging && (reason === "error" || (typeof reason === "string" && reason.toLowerCase() === "error")))
+        ? "On staging, ensure you have a mock passport set up in the Self mobile app before scanning the QR."
+        : undefined;
     toast({
       title: "Verification error",
-      description: typeof reason === "string" ? reason : "Verification failed. Ensure your Self app has a valid NFC passport and try again.",
+      description:
+        hint
+          ? `${reason}. ${hint}`
+          : typeof reason === "string"
+          ? reason
+          : "Verification failed. Ensure your Self app has a valid NFC passport (production) or a mock passport (staging) and try again.",
       variant: "destructive",
     });
   }, []);
