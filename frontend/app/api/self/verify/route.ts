@@ -13,10 +13,10 @@ async function getVerifier() {
   
   try {
     const { SelfBackendVerifier, AllIds, DefaultConfigStore } = await import("@selfxyz/core");
+    const endpointType = process.env.NEXT_PUBLIC_SELF_ENDPOINT_TYPE || '';
     const mockPassport = (
-      process.env.NEXT_PUBLIC_SELF_ENDPOINT_TYPE === 'staging_https' ||
-      process.env.SELF_DEV_MODE === 'true' ||
-      process.env.NODE_ENV !== 'production'
+      (typeof endpointType === 'string' && endpointType.includes('staging')) ||
+      process.env.SELF_DEV_MODE === 'true'
     );
     verifier = new SelfBackendVerifier(
       "secureflow-identity",
@@ -325,8 +325,11 @@ export async function POST(request: NextRequest) {
 
 // Health check endpoint
 export async function GET() {
+  const endpointType = process.env.NEXT_PUBLIC_SELF_ENDPOINT_TYPE || 'https';
+  const mode = (typeof endpointType === 'string' && endpointType.includes('staging')) ? 'staging' : 'production';
   return NextResponse.json({
     status: "active",
+    mode,
     service: "Self Protocol Verification",
     endpoint: "/api/self/verify",
     contract: CONTRACTS.SECUREFLOW_ESCROW,

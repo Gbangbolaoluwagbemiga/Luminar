@@ -64,28 +64,30 @@ export function SelfVerificationProvider({ children }: { children: ReactNode }) 
     }
 
     try {
-      const isStaging = (process.env.NEXT_PUBLIC_SELF_ENDPOINT_TYPE as any) === 'staging_https';
+      const hostname = window.location.hostname || "";
+      const endpointTypeEnv = process.env.NEXT_PUBLIC_SELF_ENDPOINT_TYPE as any;
+      const autoEndpointType = endpointTypeEnv ?? (hostname.endsWith("vercel.app") ? "staging_https" : "https");
+      const devModeAuto = typeof autoEndpointType === "string" && autoEndpointType.includes("staging");
+
       const app = new SelfAppBuilder({
         appName: "SecureFlow",
         logoBase64: `${window.location.origin}/secureflow-logo.svg`,
-        endpointType: (process.env.NEXT_PUBLIC_SELF_ENDPOINT_TYPE as any) || 'https',
+        endpointType: autoEndpointType,
         endpoint: `${window.location.origin}/api/self/verify`,
         scope: "secureflow-identity",
         userId: wallet.address.toLowerCase(),
         userIdType: 'hex',
-        devMode: isStaging ? true : false,
+        devMode: devModeAuto,
         version: 2,
         chainID: 42220,
-        userDefinedData: Buffer.from(JSON.stringify({ action: "identity_verification", required_age: 18 }))
-          .toString('hex')
-          .padEnd(128, '0'),
+        userDefinedData: "secureflow|identity_verification|age>=18",
         disclosures: {
           minimumAge: 18,
           excludedCountries: [],
           ofac: false,
         } as any,
       }).build();
-      
+
       setSelfApp(app);
     } catch (error: any) {
       console.error("Failed to initialize Self App:", error);
