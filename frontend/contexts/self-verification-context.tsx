@@ -64,6 +64,7 @@ export function SelfVerificationProvider({ children }: { children: ReactNode }) 
     }
 
     try {
+      const isStaging = (process.env.NEXT_PUBLIC_SELF_ENDPOINT_TYPE as any) === 'staging_https';
       const app = new SelfAppBuilder({
         appName: "SecureFlow",
         logoBase64: `${window.location.origin}/secureflow-logo.svg`,
@@ -72,6 +73,7 @@ export function SelfVerificationProvider({ children }: { children: ReactNode }) 
         scope: "secureflow-identity",
         userId: wallet.address.toLowerCase(),
         userIdType: 'hex',
+        devMode: isStaging ? true : false,
         version: 2,
         chainID: 42220,
         userDefinedData: Buffer.from(JSON.stringify({ action: "identity_verification", required_age: 18 }))
