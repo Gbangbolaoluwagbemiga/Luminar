@@ -69,13 +69,14 @@ export function SelfVerificationProvider({ children }: { children: ReactNode }) 
       const autoEndpointType = endpointTypeEnv ?? (hostname.endsWith("vercel.app") ? "staging_https" : "https");
       const devModeAuto = typeof autoEndpointType === "string" && autoEndpointType.includes("staging");
       const endpointOverride = (process.env.NEXT_PUBLIC_SELF_ENDPOINT as string) || `${window.location.origin}/api/self/verify`;
+      const scopeAuto = (process.env.NEXT_PUBLIC_SELF_SCOPE as string) || (endpointOverride.includes("playground.self.xyz") ? "self-playground" : "secureflow-identity");
 
       const app = new SelfAppBuilder({
         appName: "SecureFlow",
         logoBase64: `${window.location.origin}/secureflow-logo.svg`,
         endpointType: autoEndpointType,
         endpoint: endpointOverride,
-        scope: "secureflow-identity",
+        scope: scopeAuto,
         userId: wallet.address.toLowerCase(),
         userIdType: 'hex',
         devMode: devModeAuto,
@@ -95,7 +96,7 @@ export function SelfVerificationProvider({ children }: { children: ReactNode }) 
         endpointType: autoEndpointType,
         devMode: devModeAuto,
         endpoint: endpointOverride,
-        scope: "secureflow-identity",
+        scope: scopeAuto,
         userId: wallet.address.toLowerCase(),
         disclosures: {
           minimumAge: 18,
