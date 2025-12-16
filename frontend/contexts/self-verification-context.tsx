@@ -73,19 +73,11 @@ export function SelfVerificationProvider({ children }: { children: ReactNode }) 
       const scopeEnv = (process.env.NEXT_PUBLIC_SELF_SCOPE as string) || "";
       const scopeAuto = endpointIsPlayground ? "self-playground" : (scopeEnv && scopeEnv !== "self-playground" ? scopeEnv : "secureflow-identity");
 
-      const disclosuresPayload = endpointIsPlayground
-        ? {
-            minimumAge: 18,
-            excludedCountries: [],
-            ofac: false,
-          }
-        : {
-            minimumAge: 18,
-            excludedCountries: [],
-            ofac: false,
-            nationality: true,
-            gender: true,
-          };
+      const disclosuresPayload = {
+        minimumAge: 18,
+        excludedCountries: [],
+        ofac: false,
+      };
 
       const app = new SelfAppBuilder({
         appName: "SecureFlow",
