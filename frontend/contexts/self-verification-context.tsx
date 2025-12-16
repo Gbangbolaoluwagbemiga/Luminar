@@ -66,7 +66,8 @@ export function SelfVerificationProvider({ children }: { children: ReactNode }) 
     try {
       const hostname = window.location.hostname || "";
       const endpointTypeEnv = process.env.NEXT_PUBLIC_SELF_ENDPOINT_TYPE as any;
-      const autoEndpointType = endpointTypeEnv ?? (hostname.endsWith("vercel.app") ? "staging_https" : "https");
+      const autoEndpointTypeRaw = endpointTypeEnv ?? (hostname.endsWith("vercel.app") ? "staging_https" : "https");
+      const autoEndpointType = (autoEndpointTypeRaw === "staging_https") ? "https-staging" : autoEndpointTypeRaw;
       const devModeAuto = typeof autoEndpointType === "string" && autoEndpointType.includes("staging");
 
       const app = new SelfAppBuilder({
@@ -83,9 +84,8 @@ export function SelfVerificationProvider({ children }: { children: ReactNode }) 
         userDefinedData: "secureflow|identity_verification|age>=18",
         disclosures: {
           minimumAge: 18,
-          olderThan: 18,
-          excludedCountries: [],
-          ofac: false,
+          nationality: true,
+          gender: true,
         } as any,
       }).build();
 
@@ -96,9 +96,8 @@ export function SelfVerificationProvider({ children }: { children: ReactNode }) 
         userId: wallet.address.toLowerCase(),
         disclosures: {
           minimumAge: 18,
-          olderThan: 18,
-          excludedCountries: [],
-          ofac: false,
+          nationality: true,
+          gender: true,
         },
       });
 
