@@ -66,15 +66,15 @@ export function SelfVerificationProvider({ children }: { children: ReactNode }) 
     try {
       const hostname = window.location.hostname || "";
       const endpointTypeEnv = process.env.NEXT_PUBLIC_SELF_ENDPOINT_TYPE as any;
-      const autoEndpointTypeRaw = endpointTypeEnv ?? (hostname.endsWith("vercel.app") ? "staging_https" : "https");
-      const autoEndpointType = (autoEndpointTypeRaw === "staging_https") ? "https-staging" : autoEndpointTypeRaw;
+      const autoEndpointType = endpointTypeEnv ?? (hostname.endsWith("vercel.app") ? "staging_https" : "https");
       const devModeAuto = typeof autoEndpointType === "string" && autoEndpointType.includes("staging");
+      const endpointOverride = (process.env.NEXT_PUBLIC_SELF_ENDPOINT as string) || `${window.location.origin}/api/self/verify`;
 
       const app = new SelfAppBuilder({
         appName: "SecureFlow",
         logoBase64: `${window.location.origin}/secureflow-logo.svg`,
         endpointType: autoEndpointType,
-        endpoint: `${window.location.origin}/api/self/verify`,
+        endpoint: endpointOverride,
         scope: "secureflow-identity",
         userId: wallet.address.toLowerCase(),
         userIdType: 'hex',
@@ -92,6 +92,7 @@ export function SelfVerificationProvider({ children }: { children: ReactNode }) 
       console.log("[Self] Builder payload:", {
         endpointType: autoEndpointType,
         devMode: devModeAuto,
+        endpoint: endpointOverride,
         scope: "secureflow-identity",
         userId: wallet.address.toLowerCase(),
         disclosures: {
