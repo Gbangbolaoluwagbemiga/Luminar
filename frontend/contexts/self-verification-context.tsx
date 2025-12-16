@@ -84,6 +84,8 @@ export function SelfVerificationProvider({ children }: { children: ReactNode }) 
         userDefinedData: "secureflow|identity_verification|age>=18",
         disclosures: {
           minimumAge: 18,
+          excludedCountries: [],
+          ofac: false,
           nationality: true,
           gender: true,
         } as any,
@@ -97,6 +99,8 @@ export function SelfVerificationProvider({ children }: { children: ReactNode }) 
         userId: wallet.address.toLowerCase(),
         disclosures: {
           minimumAge: 18,
+          excludedCountries: [],
+          ofac: false,
           nationality: true,
           gender: true,
         },
