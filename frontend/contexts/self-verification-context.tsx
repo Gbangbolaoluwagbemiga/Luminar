@@ -71,7 +71,7 @@ export function SelfVerificationProvider({ children }: { children: ReactNode }) 
       // Default to 'https' (production) for Vercel deployments unless explicitly set to staging
       const autoEndpointType = endpointIsPlayground ? "https" : (endpointTypeEnv ?? "https");
       const devModeAuto = endpointIsPlayground ? false : (typeof autoEndpointType === "string" && autoEndpointType.includes("staging"));
-      const scopeEnv = (process.env.NEXT_PUBLIC_SELF_SCOPE as string) || "";
+      const scopeEnv = (process.env.NEXT_PUBLIC_SELF_SCOPE as string) || "secureflow-identity";
       const scopeAuto = endpointIsPlayground ? "self-playground" : (scopeEnv && scopeEnv !== "self-playground" ? scopeEnv : "secureflow-identity");
 
       // Warning for common configuration issues
