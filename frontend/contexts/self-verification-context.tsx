@@ -85,13 +85,10 @@ export function SelfVerificationProvider({ children }: { children: ReactNode }) 
         console.warn("[Self] The provided scope looks like a UUID/Project ID. Self Protocol scopes are typically short strings (e.g., 'secureflow-app'). Ensure you are using the Scope Name, not the Project ID.");
       }
       
-      // Mimic ZeroSum's implementation for disclosures
+      // Simplify disclosures to bare minimum to fix "Unsupported number of inputs: 0"
+      // This error often means the app can't map the requirements to the user's credentials
       const disclosuresPayload = {
         minimumAge: 18,
-        nationality: true,
-        gender: false,
-        excludedCountries: ["IRN", "PRK", "RUS", "SYR"],
-        ofac: true,
       } as any;
 
       const app = new SelfAppBuilder({
