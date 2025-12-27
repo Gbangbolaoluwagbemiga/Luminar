@@ -49,7 +49,7 @@ const networks = [
 createAppKit({
   adapters: [new EthersAdapter()],
   metadata,
-  networks,
+  networks: networks as any,
   projectId,
   features: {
     analytics: true,
