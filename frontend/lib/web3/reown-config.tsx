@@ -6,12 +6,12 @@ import { EthersAdapter } from "@reown/appkit-adapter-ethers";
 import { ethers } from "ethers";
 
 // Get projectId from environment
-const projectId =
+export const projectId =
   process.env.NEXT_PUBLIC_REOWN_ID || "1db88bda17adf26df9ab7799871788c4";
 
 // Create metadata
 // In development, use localhost; in production, use the production URL
-const metadata = {
+export const metadata = {
   name: "SecureFlow",
   description: "Secure Escrow Platform for Freelancers",
   url: typeof window !== "undefined" 
