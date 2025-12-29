@@ -62,7 +62,7 @@ abstract contract RatingSystem is EscrowCore {
         EscrowData storage e = escrows[escrowId];
         require(e.status == EscrowStatus.Released, "Escrow not completed");
         require(msg.sender == e.depositor, "Only client can rate");
-        require(selfVerifiedUsers[msg.sender], "Identity verification required to rate");
+        // Verification requirement removed
         require(e.beneficiary != address(0), "No freelancer assigned");
         require(rating >= 1 && rating <= 5, "Rating must be 1-5");
         require(!escrowRatings[escrowId].exists, "Already rated");
