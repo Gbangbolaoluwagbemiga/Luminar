@@ -1045,6 +1045,16 @@
         "internalType": "uint256",
         "name": "milestoneIndex",
         "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "validUntilBlock",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes",
+        "name": "signature",
+        "type": "bytes"
       }
     ],
     "name": "approveMilestone",

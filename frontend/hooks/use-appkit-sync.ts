@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useAppKit } from "@reown/appkit/react";
+import { useAppKit, useAppKitAccount, useAppKitNetwork } from "@reown/appkit/react";
 import { useWeb3 } from "@/contexts/web3-context";
 
 export function useAppKitSync() {
-  const { open, address, isConnected, chainId } = useAppKit();
+  const { open } = useAppKit();
+  const { address, isConnected } = useAppKitAccount();
+  const { chainId } = useAppKitNetwork();
   const { wallet } = useWeb3();
   const prevConnectedRef = useRef(false);
 
@@ -23,7 +25,7 @@ export function useAppKitSync() {
     if (!isConnected && wallet.isConnected) {
       // The Web3 context polling will catch this, but we can trigger it faster
       if (typeof window !== "undefined" && window.ethereum) {
-        window.ethereum.request({ method: "eth_accounts" }).catch(() => {
+        (window.ethereum as any).request({ method: "eth_accounts" }).catch(() => {
           // Ignore errors
         });
       }

@@ -10,8 +10,16 @@ import {
 import { CELO_MAINNET, CELO_TESTNET, CONTRACTS } from "@/lib/web3/config";
 import type { WalletState } from "@/lib/web3/types";
 import { useToast } from "@/hooks/use-toast";
-import { useAppKit } from "@reown/appkit/react";
+import { useAppKit, useAppKitAccount, useAppKitNetwork } from "@reown/appkit/react";
 import { ethers } from "ethers";
+
+interface Eip1193Provider {
+  request: (args: { method: string; params?: any[] }) => Promise<any>;
+  on: (eventName: string, listener: (...args: any[]) => void) => void;
+  removeListener: (eventName: string, listener: (...args: any[]) => void) => void;
+  providers?: Eip1193Provider[];
+  [key: string]: unknown;
+}
 
 interface Web3ContextType {
   wallet: WalletState;
@@ -28,7 +36,8 @@ const Web3Context = createContext<Web3ContextType | undefined>(undefined);
 
 export function Web3Provider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
-  const { address: appKitAddress, isConnected: appKitConnected, chainId: appKitChainId } = useAppKit();
+  const { address: appKitAddress, isConnected: appKitConnected } = useAppKitAccount();
+  const { chainId: appKitChainId } = useAppKitNetwork();
   const [wallet, setWallet] = useState<WalletState>({
     address: null,
     chainId: null,
@@ -44,7 +53,8 @@ export function Web3Provider({ children }: { children: ReactNode }) {
     if (typeof window === "undefined" || !window.ethereum) return false;
     
     try {
-      const chainId = await window.ethereum.request({ method: "eth_chainId" });
+      const provider = window.ethereum as unknown as Eip1193Provider;
+      const chainId = await provider.request({ method: "eth_chainId" });
       const chainIdNumber = Number.parseInt(chainId, 16);
       const targetChainId = Number.parseInt(CELO_MAINNET.chainId, 16);
       
@@ -54,7 +64,7 @@ export function Web3Provider({ children }: { children: ReactNode }) {
       // Try to switch - if it fails with 4902, network doesn't exist
       // We catch the error to check the code without actually switching
       try {
-        await window.ethereum.request({
+        await provider.request({
           method: "wallet_switchEthereumChain",
           params: [{ chainId: CELO_MAINNET.chainId }],
         });
@@ -153,8 +163,9 @@ export function Web3Provider({ children }: { children: ReactNode }) {
     checkConnection();
 
     if (typeof window !== "undefined" && window.ethereum) {
-      window.ethereum.on("accountsChanged", handleAccountsChanged);
-      window.ethereum.on("chainChanged", handleChainChanged);
+      const provider = window.ethereum as unknown as Eip1193Provider;
+      provider.on("accountsChanged", handleAccountsChanged);
+      provider.on("chainChanged", handleChainChanged);
     }
 
     // Re-check connection periodically to catch AppKit connections
@@ -166,11 +177,12 @@ export function Web3Provider({ children }: { children: ReactNode }) {
     return () => {
       clearInterval(interval);
       if (typeof window !== "undefined" && window.ethereum) {
-        window.ethereum.removeListener(
+        const provider = window.ethereum as unknown as Eip1193Provider;
+        provider.removeListener(
           "accountsChanged",
           handleAccountsChanged
         );
-        window.ethereum.removeListener("chainChanged", handleChainChanged);
+        provider.removeListener("chainChanged", handleChainChanged);
       }
     };
   }, []);
@@ -294,11 +306,12 @@ export function Web3Provider({ children }: { children: ReactNode }) {
     setIsConnecting(true);
 
     try {
-      const accounts = await window.ethereum.request({
+      const provider = window.ethereum as unknown as Eip1193Provider;
+      const accounts = await provider.request({
         method: "eth_requestAccounts",
       });
 
-      const chainId = await window.ethereum.request({ method: "eth_chainId" });
+      const chainId = await provider.request({ method: "eth_chainId" });
       const chainIdNumber = Number.parseInt(chainId, 16);
       const targetChainId = Number.parseInt(CELO_MAINNET.chainId, 16);
 
@@ -316,7 +329,7 @@ export function Web3Provider({ children }: { children: ReactNode }) {
           await new Promise((resolve) => setTimeout(resolve, 1500));
 
           // Verify we're now on Celo
-          const newChainId = await window.ethereum.request({
+          const newChainId = await provider.request({
             method: "eth_chainId",
           });
           const newChainIdNumber = Number.parseInt(newChainId, 16);
@@ -324,7 +337,7 @@ export function Web3Provider({ children }: { children: ReactNode }) {
           if (newChainIdNumber !== targetChainId) {
             // If still not on Celo, try to add it directly
             try {
-              await window.ethereum.request({
+              await provider.request({
                 method: "wallet_addEthereumChain",
                 params: [CELO_MAINNET],
               });
@@ -353,7 +366,7 @@ export function Web3Provider({ children }: { children: ReactNode }) {
             switchError.message?.includes("not been added")
           ) {
             try {
-              await window.ethereum.request({
+              await provider.request({
                 method: "wallet_addEthereumChain",
                 params: [CELO_MAINNET],
               });
@@ -383,7 +396,7 @@ export function Web3Provider({ children }: { children: ReactNode }) {
         }
       }
 
-      const balance = await window.ethereum.request({
+      const balance = await provider.request({
         method: "eth_getBalance",
         params: [accounts[0], "latest"],
       });
@@ -448,12 +461,13 @@ export function Web3Provider({ children }: { children: ReactNode }) {
 
   const switchToCelo = async () => {
     if (typeof window === "undefined" || !window.ethereum) return;
+    const provider = window.ethereum as unknown as Eip1193Provider;
 
     if (isSwitchingNetwork) {
       return;
     }
 
-    const currentChainId = await window.ethereum.request({
+    const currentChainId = await provider.request({
       method: "eth_chainId",
     });
     const currentChainIdNumber = Number.parseInt(currentChainId, 16);
@@ -470,7 +484,7 @@ export function Web3Provider({ children }: { children: ReactNode }) {
     setIsSwitchingNetwork(true);
 
     try {
-      await window.ethereum.request({
+      await provider.request({
         method: "wallet_switchEthereumChain",
         params: [{ chainId: CELO_MAINNET.chainId }],
       });
@@ -482,7 +496,7 @@ export function Web3Provider({ children }: { children: ReactNode }) {
     } catch (error: any) {
       if (error.code === 4902) {
         try {
-          await window.ethereum.request({
+          await provider.request({
             method: "wallet_addEthereumChain",
             params: [CELO_MAINNET],
           });
@@ -524,9 +538,10 @@ export function Web3Provider({ children }: { children: ReactNode }) {
       });
       return false;
     }
+    const provider = window.ethereum as unknown as Eip1193Provider;
 
     try {
-      await window.ethereum.request({
+      await provider.request({
         method: "wallet_addEthereumChain",
         params: [CELO_MAINNET],
       });
@@ -539,7 +554,7 @@ export function Web3Provider({ children }: { children: ReactNode }) {
       // After adding, try to switch to it
       setTimeout(async () => {
         try {
-          await window.ethereum.request({
+          await provider.request({
             method: "wallet_switchEthereumChain",
             params: [{ chainId: CELO_MAINNET.chainId }],
           });
@@ -572,12 +587,13 @@ export function Web3Provider({ children }: { children: ReactNode }) {
 
   const switchToCeloTestnet = async () => {
     if (typeof window === "undefined" || !window.ethereum) return;
+    const provider = window.ethereum as unknown as Eip1193Provider;
 
     if (isSwitchingNetwork) {
       return;
     }
 
-    const currentChainId = await window.ethereum.request({
+    const currentChainId = await provider.request({
       method: "eth_chainId",
     });
     const currentChainIdNumber = Number.parseInt(currentChainId, 16);
@@ -594,7 +610,7 @@ export function Web3Provider({ children }: { children: ReactNode }) {
     setIsSwitchingNetwork(true);
 
     try {
-      await window.ethereum.request({
+      await provider.request({
         method: "wallet_switchEthereumChain",
         params: [{ chainId: CELO_TESTNET.chainId }],
       });
@@ -606,7 +622,7 @@ export function Web3Provider({ children }: { children: ReactNode }) {
     } catch (error: any) {
       if (error.code === 4902) {
         try {
-          await window.ethereum.request({
+          await provider.request({
             method: "wallet_addEthereumChain",
             params: [CELO_TESTNET],
           });
@@ -655,7 +671,7 @@ export function Web3Provider({ children }: { children: ReactNode }) {
           if (typeof window !== "undefined" && window.ethereum) {
             try {
               const walletProvider = new ethers.BrowserProvider(
-                window.ethereum
+                window.ethereum as unknown as Eip1193Provider
               );
               const contract = new ethers.Contract(
                 targetAddress,
@@ -686,8 +702,10 @@ export function Web3Provider({ children }: { children: ReactNode }) {
       },
       async send(method: string, value: string = "0x0", ...args: any[]) {
         try {
+          const provider = window.ethereum as unknown as Eip1193Provider;
+          
           // First, ensure we're on the correct network
-          const currentChainId = await window.ethereum.request({
+          const currentChainId = await provider.request({
             method: "eth_chainId",
           });
 
@@ -726,7 +744,7 @@ export function Web3Provider({ children }: { children: ReactNode }) {
             gasLimit = "0xc350"; // 50,000 gas - force higher limit for ERC20 approve
           } else {
             try {
-              const estimatedGas = await window.ethereum.request({
+              const estimatedGas = await provider.request({
                 method: "eth_estimateGas",
                 params: [
                   {
@@ -773,7 +791,7 @@ export function Web3Provider({ children }: { children: ReactNode }) {
             txParams.value = value;
           }
 
-          const txHash = await window.ethereum.request({
+          const txHash = await provider.request({
             method: "eth_sendTransaction",
             params: [txParams],
           });
@@ -857,9 +875,3 @@ export function useWeb3() {
   return context;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-declare global {
-  interface Window {
-    ethereum?: any;
-  }
-}
