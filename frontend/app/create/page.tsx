@@ -65,7 +65,7 @@ export default function CreateEscrowPage() {
     if (!wallet.isConnected) return;
 
     try {
-      const currentChainId = await window.ethereum.request({
+      const currentChainId = await (window.ethereum as any).request({
         method: "eth_chainId",
       });
       const targetChainId = CELO_MAINNET.chainId; // Somnia Dream Testnet
@@ -943,9 +943,9 @@ export default function CreateEscrowPage() {
           // Method 1: Direct wallet provider call (most reliable)
           try {
             if (typeof window !== "undefined" && window.ethereum) {
-              const walletProvider = new ethers.BrowserProvider(
-                window.ethereum
-              );
+            const walletProvider = new ethers.BrowserProvider(
+              window.ethereum as any
+            );
               const tokenContractDirect = new ethers.Contract(
                 checksummedTokenAddress,
                 ERC20_ABI,
@@ -1088,13 +1088,15 @@ export default function CreateEscrowPage() {
 
           while (approvalAttempts < maxApprovalAttempts) {
             try {
-              approvalReceipt = await window.ethereum.request({
-                method: "eth_getTransactionReceipt",
-                params: [approvalTx],
-              });
+              if (typeof window !== "undefined" && window.ethereum) {
+                approvalReceipt = await (window.ethereum as any).request({
+                  method: "eth_getTransactionReceipt",
+                  params: [approvalTx],
+                });
 
-              if (approvalReceipt) {
-                break;
+                if (approvalReceipt) {
+                  break;
+                }
               }
             } catch (error) {}
 
@@ -1157,7 +1159,7 @@ export default function CreateEscrowPage() {
           try {
             const { ethers } = await import("ethers");
             const checksummedAddress = ethers.getAddress(wallet.address);
-            const walletProvider = new ethers.BrowserProvider(window.ethereum);
+            const walletProvider = new ethers.BrowserProvider(window.ethereum as any);
             balanceInWei = await walletProvider.getBalance(checksummedAddress);
             balanceSource = "walletProvider";
             console.log(
@@ -1177,7 +1179,7 @@ export default function CreateEscrowPage() {
           try {
             const { ethers } = await import("ethers");
             const checksummedAddress = ethers.getAddress(wallet.address);
-            const balance = await window.ethereum.request({
+            const balance = await (window.ethereum as any).request({
               method: "eth_getBalance",
               params: [checksummedAddress, "latest"],
             });
@@ -1436,13 +1438,15 @@ export default function CreateEscrowPage() {
 
         while (attempts < maxAttempts) {
           try {
-            receipt = await window.ethereum.request({
-              method: "eth_getTransactionReceipt",
-              params: [txHash],
-            });
+            if (typeof window !== "undefined" && window.ethereum) {
+              receipt = await (window.ethereum as any).request({
+                method: "eth_getTransactionReceipt",
+                params: [txHash],
+              });
 
-            if (receipt) {
-              break;
+              if (receipt) {
+                break;
+              }
             }
           } catch (error) {}
 
@@ -1481,13 +1485,15 @@ export default function CreateEscrowPage() {
 
         while (attempts < maxAttempts) {
           try {
-            receipt = await window.ethereum.request({
-              method: "eth_getTransactionReceipt",
-              params: [txHash],
-            });
+            if (typeof window !== "undefined" && window.ethereum) {
+              receipt = await (window.ethereum as any).request({
+                method: "eth_getTransactionReceipt",
+                params: [txHash],
+              });
 
-            if (receipt) {
-              break;
+              if (receipt) {
+                break;
+              }
             }
           } catch (error) {}
 

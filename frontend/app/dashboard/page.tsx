@@ -1137,11 +1137,13 @@ export default function DashboardPage() {
 
       while (attempts < maxAttempts) {
         try {
-          receipt = await window.ethereum.request({
-            method: "eth_getTransactionReceipt",
-            params: [txHash],
-          });
-          if (receipt) break;
+          if (typeof window !== "undefined" && window.ethereum) {
+            receipt = await (window.ethereum as any).request({
+              method: "eth_getTransactionReceipt",
+              params: [txHash],
+            });
+            if (receipt) break;
+          }
         } catch (error) {}
         await new Promise((resolve) => setTimeout(resolve, 2000));
         attempts++;
@@ -1250,11 +1252,13 @@ export default function DashboardPage() {
 
       while (attempts < maxAttempts) {
         try {
-          receipt = await window.ethereum.request({
-            method: "eth_getTransactionReceipt",
-            params: [txHash],
-          });
-          if (receipt) break;
+          if (typeof window !== "undefined" && window.ethereum) {
+            receipt = await (window.ethereum as any).request({
+              method: "eth_getTransactionReceipt",
+              params: [txHash],
+            });
+            if (receipt) break;
+          }
         } catch (error) {}
         await new Promise((resolve) => setTimeout(resolve, 2000));
         attempts++;

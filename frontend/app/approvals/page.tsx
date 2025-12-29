@@ -25,6 +25,7 @@ import { ApprovalsLoading } from "@/components/approvals/approvals-loading";
 interface JobWithApplications extends Escrow {
   applications: Application[];
   applicationCount: number;
+  projectTitle?: string;
   projectDescription?: string;
   isOpenJob?: boolean;
 }
@@ -436,7 +437,7 @@ export default function ApprovalsPage() {
           selectedFreelancer.freelancerAddress,
           {
             jobTitle:
-              selectedJobForApproval.projectDescription ||
+              selectedJobForApproval.projectTitle ||
               `Job #${selectedJobForApproval.id}`,
             freelancerName:
               selectedFreelancer.freelancerAddress.slice(0, 6) +
@@ -444,7 +445,7 @@ export default function ApprovalsPage() {
               selectedFreelancer.freelancerAddress.slice(-4),
           }
         ),
-        [selectedFreelancer.freelancerAddress] // Notify the freelancer
+        [selectedFreelancer.freelancerAddress]
       );
 
       // Close modals first
