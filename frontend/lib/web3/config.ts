@@ -32,7 +32,7 @@ export const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 // Prefer env overrides for deploys; fall back to known defaults
 const SECUREFLOW_ADDR =
   process.env.NEXT_PUBLIC_SECUREFLOW_ESCROW ||
-  "0x067FDA1ED957BB352679cbc840Ce6329E470fd07";
+  "0x407590806233B64D5176746C8b2bE30fB3748aB9";
 
 export const CONTRACTS = {
   // Celo Mainnet
