@@ -31,6 +31,10 @@ import {
   XCircle,
 } from "lucide-react";
 import type { Milestone } from "@/lib/web3/types";
+import { useEngagementRewards } from "@goodsdks/engagement-sdk";
+
+// Production Engagement Rewards Contract
+const ENGAGEMENT_REWARDS_ADDRESS = "0x25db74CF4E7BA120526fd87e159CF656d94bAE43";
 
 interface MilestoneActionsProps {
   escrowId: string;
@@ -46,6 +50,8 @@ interface MilestoneActionsProps {
   beneficiaryAddress?: string; // Freelancer address for notifications
 }
 
+import { ENGAGEMENT_REWARDS_ABI } from "@/lib/web3/engagement-rewards-abi";
+
 export function MilestoneActions({
   escrowId,
   milestoneIndex,
@@ -59,7 +65,8 @@ export function MilestoneActions({
   payerAddress,
   beneficiaryAddress,
 }: MilestoneActionsProps) {
-  const { getContract } = useWeb3();
+  const { getContract, wallet } = useWeb3();
+  const engagementRewards = useEngagementRewards(ENGAGEMENT_REWARDS_ADDRESS);
   const { executeTransaction, executeBatchTransaction, isSmartAccountReady } =
     useSmartAccount();
   const { isDelegatedFunction } = useDelegation();
@@ -296,6 +303,61 @@ export function MilestoneActions({
               return;
             }
 
+            let signature = "0x";
+            let validUntilBlock = 0;
+
+            if (wallet.address) {
+              try {
+                // 1. Get current block for signature validity
+                const { ethers } = await import("ethers");
+                let currentBlock = 0;
+                
+                if (typeof window !== "undefined" && window.ethereum) {
+                   const provider = new ethers.BrowserProvider(window.ethereum as any);
+                   currentBlock = await provider.getBlockNumber();
+                } else {
+                   const provider = new ethers.JsonRpcProvider("https://forno.celo.org");
+                   currentBlock = await provider.getBlockNumber();
+                }
+
+                validUntilBlock = Number(currentBlock) + 600; // Valid for 600 blocks (~50 mins)
+
+                // 2. Check if user is registered
+                const erContract = getContract(ENGAGEMENT_REWARDS_ADDRESS, ENGAGEMENT_REWARDS_ABI);
+                
+                if (erContract) {
+                  const result = await erContract.call(
+                    "userRegistrations",
+                    CONTRACTS.SECUREFLOW_ESCROW,
+                    wallet.address
+                  );
+                  
+                  // Result is [isRegistered, lastClaimTimestamp]
+                  const isRegisteredInt = result[0];
+
+                  if (Number(isRegisteredInt) === 0) {
+                    toast({
+                      title: "One-time Setup",
+                      description:
+                        "Please sign to register for Engagement Rewards...",
+                    });
+
+                    // 3. Generate signature for first-time users
+                    if (engagementRewards) {
+                      signature = await engagementRewards.signClaim(
+                        CONTRACTS.SECUREFLOW_ESCROW as `0x${string}`,
+                        "0x0000000000000000000000000000000000000000", // No inviter
+                        BigInt(validUntilBlock)
+                      );
+                    }
+                  }
+                }
+              } catch (err) {
+                console.warn("Engagement Rewards setup warning:", err);
+                // Continue with defaults if ER fails
+              }
+            }
+
             if (useSmartAccount) {
               // Use Smart Account for enhanced transaction
               const { ethers } = await import("ethers");
@@ -303,8 +365,8 @@ export function MilestoneActions({
               const data = iface.encodeFunctionData("approveMilestone", [
                 escrowId,
                 milestoneIndex,
-                0, // validUntilBlock (dummy)
-                "0x", // signature (dummy)
+                validUntilBlock,
+                signature,
               ]);
               txHash = await executeTransaction(
                 CONTRACTS.SECUREFLOW_ESCROW,
@@ -319,13 +381,13 @@ export function MilestoneActions({
               // Use regular transaction
               // Try to estimate gas first to catch potential issues
               try {
-                  const gasEstimate = await contract.estimateGas.approveMilestone(
-                    escrowId,
-                    milestoneIndex,
-                    0, // validUntilBlock
-                    "0x" // signature
-                  );
-                } catch (gasError) {
+                const gasEstimate = await contract.estimateGas.approveMilestone(
+                  escrowId,
+                  milestoneIndex,
+                  validUntilBlock,
+                  signature
+                );
+              } catch (gasError) {
                 // Gas estimation failed, but continue with transaction
                 console.log(
                   "Gas estimation failed, proceeding with transaction",
@@ -343,8 +405,8 @@ export function MilestoneActions({
                     "no-value",
                     escrowId,
                     milestoneIndex,
-                    0, // validUntilBlock
-                    "0x" // signature
+                    validUntilBlock,
+                    signature
                   );
                   break; // Success, exit retry loop
                 } catch (sendError: any) {
