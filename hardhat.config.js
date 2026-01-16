@@ -77,6 +77,22 @@ module.exports = {
       maxFeePerGas: 10000000000, // 10 gwei
       maxPriorityFeePerGas: 1000000000, // 1 gwei
     },
+    // Cronos EVM Networks for Luminar
+    cronos: {
+      url: process.env.CRONOS_RPC_URL || "https://evm.cronos.org",
+      accounts:
+        process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+      chainId: 25, // Cronos mainnet chain ID
+      gas: 8000000,
+    },
+    cronosTestnet: {
+      url:
+        process.env.CRONOS_TESTNET_RPC_URL || "https://evm-t3.cronos.org",
+      accounts:
+        process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+      chainId: 338, // Cronos testnet chain ID
+      gas: 8000000,
+    },
   },
   paths: {
     sources: "./contracts",
@@ -85,7 +101,12 @@ module.exports = {
     artifacts: "./artifacts",
   },
   etherscan: {
-    apiKey: process.env.CELOSCAN_API_KEY || "",
+    apiKey: {
+      celo: process.env.CELOSCAN_API_KEY || "",
+      celoTestnet: process.env.CELOSCAN_API_KEY || "",
+      cronos: process.env.CRONOSCAN_API_KEY || "",
+      cronosTestnet: process.env.CRONOSCAN_API_KEY || "",
+    },
     customChains: [
       {
         network: "celo",
@@ -117,6 +138,22 @@ module.exports = {
         urls: {
           apiURL: "https://api-sepolia.basescan.org/v2/api",
           browserURL: "https://sepolia.basescan.org",
+        },
+      },
+      {
+        network: "cronos",
+        chainId: 25,
+        urls: {
+          apiURL: "https://api.cronoscan.com/api",
+          browserURL: "https://cronoscan.com",
+        },
+      },
+      {
+        network: "cronosTestnet",
+        chainId: 338,
+        urls: {
+          apiURL: "https://api-testnet.cronoscan.com/api",
+          browserURL: "https://testnet.cronoscan.com",
         },
       },
     ],

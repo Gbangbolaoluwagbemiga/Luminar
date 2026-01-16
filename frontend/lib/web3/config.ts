@@ -1,57 +1,71 @@
-export const CELO_MAINNET = {
-  chainId: "0xA4EC", // 42220 in hex (Celo Mainnet)
-  chainName: "Celo",
+/**
+ * Cronos Network Configuration for Luminar
+ * Updated for Cronos x402 Paytech Hackathon
+ */
+
+// Cronos Mainnet Configuration
+export const CRONOS_MAINNET = {
+  chainId: "0x19", // 25 in decimal
+  chainName: "Cronos Mainnet",
   nativeCurrency: {
-    name: "CELO",
-    symbol: "CELO",
+    name: "Cronos",
+    symbol: "CRO",
     decimals: 18,
   },
-  rpcUrls: [
-    "https://forno.celo.org",
-    "https://rpc.ankr.com/celo",
-    "https://1rpc.io/celo",
-    "https://celo.publicnode.com",
-  ],
-  blockExplorerUrls: ["https://celoscan.io"],
+  rpcUrls: ["https://evm.cronos.org"],
+  blockExplorerUrls: ["https://cronoscan.com"],
 };
 
-export const CELO_TESTNET = {
-  chainId: "0xAEF3", // 44787 in hex (Celo Alfajores Testnet)
-  chainName: "Celo Alfajores",
+// Cronos Testnet Configuration
+export const CRONOS_TESTNET = {
+  chainId: "0x152", // 338 in decimal
+  chainName: "Cronos Testnet",
   nativeCurrency: {
-    name: "CELO",
-    symbol: "CELO",
+    name: "Test Cronos",
+    symbol: "TCRO",
     decimals: 18,
   },
-  rpcUrls: ["https://alfajores-forno.celo-testnet.org"],
-  blockExplorerUrls: ["https://alfajores.celoscan.io"],
+  rpcUrls: ["https://evm-t3.cronos.org"],
+  blockExplorerUrls: ["https://testnet.cronoscan.com"],
+};
+
+// Contract addresses (will be updated after deployment)
+export const CONTRACTS = {
+  LUMINAR: process.env.NEXT_PUBLIC_LUMINAR_CONTRACT || "0x0000000000000000000000000000000000000000",
+  X402_INTEGRATION: process.env.NEXT_PUBLIC_X402_CONTRACT || "0x0000000000000000000000000000000000000000",
+  AI_AGENT_REGISTRY: process.env.NEXT_PUBLIC_AI_REGISTRY_CONTRACT || "0x0000000000000000000000000000000000000000",
+
+  //Legacy SecureFlow address for backward compat
+  SECUREFLOW_ESCROW: process.env.NEXT_PUBLIC_LUMINAR_CONTRACT || "0x0000000000000000000000000000000000000000",
+};
+
+// Token addresses on Cronos
+export const TOKENS = {
+  WCRO: process.env.NEXT_PUBLIC_WCRO_ADDRESS || "0x5C7F8A570d578ED84E63fdFA7b1eE72dEae1AE23",
+  USDC: process.env.NEXT_PUBLIC_USDC_ADDRESS || "0xc21223249CA28397B4B6541dfFaEcC539BfF0c59",
+  USDT: process.env.NEXT_PUBLIC_USDT_ADDRESS || "0x66e428c3f67a68878562e79A0234c1F83c208770",
 };
 
 export const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
-// Prefer env overrides for deploys; fall back to known defaults
-const SECUREFLOW_ADDR =
-  process.env.NEXT_PUBLIC_SECUREFLOW_ESCROW ||
-  "0x87b1D53953c7CBc4ec590C85A5c363a60d2eA92C";
+// Current network (change to CRONOS_TESTNET for testing)
+export const CURRENT_NETWORK = process.env.NEXT_PUBLIC_USE_MAINNET === "true"
+  ? CRONOS_MAINNET
+  : CRONOS_TESTNET;
 
-export const CONTRACTS = {
-  // Celo Mainnet
-  SECUREFLOW_ESCROW_MAINNET: SECUREFLOW_ADDR,
-  CUSD_MAINNET: "0x765DE816845861e75A25fCA122bb6898B8B1282a",
-
-  // Default contracts (used by frontend) - Celo Mainnet
-  SECUREFLOW_ESCROW: SECUREFLOW_ADDR,
-  USDC: "0x765DE816845861e75A25fCA122bb6898B8B1282a", // cUSD on Celo
-  MOCK_ERC20: "0x765DE816845861e75A25fCA122bb6898B8B1282a", // cUSD on Celo
-
-  // GoodDollar (G$) on Celo Mainnet
-  // Official address: https://docs.gooddollar.org/
-  GDOLLAR_CELO: 
-    process.env.NEXT_PUBLIC_GDOLLAR_CELO || 
-    "0x62B8B11039FcfE5aB0C56E502b1C372A3d2a9c7A", // G$ on Celo (official)
-
-  CELOSCAN_API_KEY:
-    process.env.NEXT_PUBLIC_CELOSCAN_API_KEY ||
-    process.env.CELOSCAN_API_KEY ||
-    "AZE1AGQSIEDRMAYGKUXFPNRHMU5YSTV4HS",
+// x402 Configuration
+export const X402_CONFIG = {
+  ENABLED: process.env.NEXT_PUBLIC_X402_ENABLED === "true",
+  FACILITATOR_URL: process.env.NEXT_PUBLIC_X402_FACILITATOR_URL || "",
 };
+
+// AI Agent Configuration
+export const AI_CONFIG = {
+  MILESTONE_MONITOR: process.env.NEXT_PUBLIC_MILESTONE_AGENT || "",
+  DISPUTE_ARBITRATOR: process.env.NEXT_PUBLIC_DISPUTE_AGENT || "",
+};
+
+// Legacy Celo exports for backward compatibility during migration
+// Remove these once all components are updated
+export const CELO_MAINNET = CRONOS_MAINNET;
+export const CELO_TESTNET = CRONOS_TESTNET;

@@ -21,10 +21,10 @@ export function GoodWalletConnect() {
       setIsComponentReady(true);
       const claimBtns = document.querySelectorAll("claim-button");
       claimBtns.forEach(btn => {
-         (btn as any).appkitConfig = {
-           projectId,
-           metadata
-         };
+        (btn as any).appkitConfig = {
+          projectId,
+          metadata
+        };
       });
     });
   }, []);
@@ -43,14 +43,14 @@ export function GoodWalletConnect() {
       <CardContent className="space-y-4">
         <div className="space-y-2">
           <p className="text-sm text-muted-foreground">
-            GoodWallet is a multi-chain wallet that supports G$ (GoodDollar) tokens on Celo. 
+            GoodWallet is a multi-chain wallet that supports G$ (GoodDollar) tokens on Celo.
             Use it to:
           </p>
           <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
             <li>Claim your daily G$ Universal Basic Income</li>
             <li>Send and receive G$ tokens</li>
             <li>Bridge G$ between networks</li>
-            <li>Pay for services on SecureFlow</li>
+            <li>Pay for services on Luminar</li>
           </ul>
         </div>
 
@@ -62,8 +62,8 @@ export function GoodWalletConnect() {
 
         {/* GoodDollar Claim Button Integration */}
         <div className="my-4 flex justify-center bg-gray-50 p-4 rounded-lg border border-gray-100">
-           {/* @ts-ignore */}
-           <claim-button environment="production" />
+          {/* @ts-ignore */}
+          <claim-button environment="production" />
         </div>
 
         <div className="flex gap-2 pt-2">
@@ -85,7 +85,7 @@ export function GoodWalletConnect() {
 
         <div className="pt-2 border-t">
           <p className="text-xs text-muted-foreground">
-            💡 Tip: GoodWallet supports WalletConnect. Connect it to SecureFlow to use G$ for escrow payments!
+            💡 Tip: GoodWallet supports WalletConnect. Connect it to Luminar to use G$ for escrow payments!
           </p>
         </div>
       </CardContent>

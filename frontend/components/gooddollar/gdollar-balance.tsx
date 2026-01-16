@@ -23,8 +23,8 @@ export function GDOLLARBalance({ showClaimButton = true, compact = false }: GDOL
   const GDOLLAR_ADDRESS = CONTRACTS.GDOLLAR_CELO;
 
   useEffect(() => {
-    if (!wallet.isConnected || !wallet.address || !GDOLLAR_ADDRESS || 
-        GDOLLAR_ADDRESS === "0x0000000000000000000000000000000000000000") {
+    if (!wallet.isConnected || !wallet.address || !GDOLLAR_ADDRESS ||
+      GDOLLAR_ADDRESS === "0x0000000000000000000000000000000000000000") {
       setBalance("0");
       return;
     }
@@ -47,7 +47,7 @@ export function GDOLLARBalance({ showClaimButton = true, compact = false }: GDOL
     };
 
     fetchBalance();
-    
+
     // Refresh balance every 30 seconds
     const interval = setInterval(fetchBalance, 30000);
     return () => clearInterval(interval);
@@ -106,7 +106,7 @@ export function GDOLLARBalance({ showClaimButton = true, compact = false }: GDOL
             <Button
               variant="outline"
               size="sm"
-              onClick={() => 
+              onClick={() =>
                 window.open(`https://celoscan.io/token/${GDOLLAR_ADDRESS}`, "_blank")
               }
             >
@@ -117,7 +117,7 @@ export function GDOLLARBalance({ showClaimButton = true, compact = false }: GDOL
 
         <div className="pt-2 border-t">
           <p className="text-xs text-muted-foreground">
-            G$ (GoodDollar) is a Universal Basic Income token. Claim your daily G$ and use it for payments on SecureFlow!
+            G$ (GoodDollar) is a Universal Basic Income token. Claim your daily G$ and use it for payments on Luminar!
           </p>
         </div>
       </CardContent>

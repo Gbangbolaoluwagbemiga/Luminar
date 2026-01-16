@@ -122,19 +122,19 @@ export default function HomePage() {
           >
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border border-primary/20 mb-6">
               <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-              <span className="text-sm font-medium">Powered by Celo</span>
+              <span className="text-sm font-medium">Powered by Cronos x402</span>
             </div>
 
             <h1 className="text-5xl md:text-7xl font-bold mb-6 text-balance leading-tight">
-              Trustless Payments.{" "}
+              AI-Powered Escrow.{" "}
               <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
-                Transparent Milestones.
+                Agentic Payments.
               </span>
             </h1>
 
             <p className="text-xl md:text-2xl text-muted-foreground mb-8 text-pretty max-w-2xl mx-auto leading-relaxed">
-              Secure escrow smart contracts for freelancers and clients. Release
-              payments based on verified milestones with complete transparency.
+              AI agents autonomously manage freelance payments using x402 programmable rails on Cronos.
+              Instant milestone approvals, automated disputes, complete transparency.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -221,10 +221,10 @@ export default function HomePage() {
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold mb-4 text-balance">
-              How SecureFlow Works
+              How Luminar Works
             </h2>
             <p className="text-xl text-muted-foreground text-pretty max-w-2xl mx-auto">
-              Simple, secure, and transparent escrow for the Web3 era
+              AI-powered escrow for the future of work
             </p>
           </div>
 
@@ -276,10 +276,10 @@ export default function HomePage() {
                 <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary/10 mb-6">
                   <span className="text-2xl font-bold text-primary">3</span>
                 </div>
-                <h3 className="text-2xl font-bold mb-3">Release Funds</h3>
+                <h3 className="text-2xl font-bold mb-3">AI Auto-Approval</h3>
                 <p className="text-muted-foreground leading-relaxed">
-                  Approve milestones to automatically release payments. Dispute
-                  resolution available if needed.
+                  AI agents analyze deliverables and trigger instant payments via x402.
+                  No manual approval delays.
                 </p>
               </Card>
             </motion.div>
@@ -297,8 +297,8 @@ export default function HomePage() {
               Ready to secure your next project?
             </h2>
             <p className="text-xl text-muted-foreground mb-8 text-pretty max-w-2xl mx-auto">
-              Join hundreds of freelancers and clients using SecureFlow for
-              trustless payments
+              Join freelancers and clients using Luminar for
+              AI-powered agentic payments
             </p>
             <Link href="/create">
               <Button size="lg" className="gap-2 text-lg px-8">

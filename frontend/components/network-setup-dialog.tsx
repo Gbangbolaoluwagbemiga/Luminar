@@ -91,7 +91,7 @@ export function NetworkSetupDialog({
             Celo Network Required
           </DialogTitle>
           <DialogDescription className="pt-2">
-            To use SecureFlow, you need to add and connect to the Celo Mainnet
+            To use Luminar, you need to add and connect to the Cronos network
             network in your wallet.
           </DialogDescription>
         </DialogHeader>

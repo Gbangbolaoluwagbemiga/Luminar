@@ -1,17 +1,27 @@
 {
-  "name": "secureflow-frontend",
-  "version": "0.1.0",
+  "name": "luminar",
+  "version": "1.0.0",
+  "description": "AI-Powered Freelance Escrow with Agentic Milestone Automation on Cronos x402",
   "private": true,
   "engines": {
     "node": ">=18"
   },
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
+    "dev": "cd frontend && npm run dev",
+    "build": "cd frontend && npm run build",
+    "start": "cd frontend && npm run start",
+    "lint": "cd frontend && npm run lint",
+    "compile": "npx hardhat compile",
+    "test": "npx hardhat test",
+    "deploy:cronos": "npx hardhat run scripts/deploy-cronos.js --network cronos",
+    "deploy:cronos-testnet": "npx hardhat run scripts/deploy-cronos.js --network cronosTestnet",
+    "verify:cronos": "npx hardhat run scripts/verify-cronos.js --network cronos",
+    "setup-agents": "node agents/setup-agents.js",
+    "test:agents": "node agents/test-agents.js",
+    "install:all": "npm install && cd frontend && npm install"
   },
   "dependencies": {
+    "@crypto.com/facilitator-client": "^1.0.0",
     "@hookform/resolvers": "^3.3.4",
     "@openzeppelin/contracts": "^4.9.0",
     "@radix-ui/react-alert-dialog": "^1.0.5",
@@ -50,6 +60,7 @@
     "lucide-react": "^0.460.0",
     "next": "15.2.4",
     "next-themes": "^0.4.4",
+    "openai": "^4.28.0",
     "react": "^18.3.1",
     "react-day-picker": "^9.1.3",
     "react-dom": "^18.3.1",
@@ -75,5 +86,16 @@
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
     "typescript": "^5"
-  }
+  },
+  "keywords": [
+    "cronos",
+    "x402",
+    "ai-agents",
+    "escrow",
+    "freelance",
+    "defi",
+    "agentic-payments"
+  ],
+  "author": "Luminar Team",
+  "license": "MIT"
 }

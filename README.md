@@ -1,390 +1,262 @@
-# SecureFlow - Decentralized Escrow & Freelance Marketplace
+# Luminar - AI-Powered Freelance Escrow with Agentic Automation
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Solidity](https://img.shields.io/badge/Solidity-^0.8.19-blue)](https://soliditylang.org/)
-[![Next.js](https://img.shields.io/badge/Next.js-15-black)](https://nextjs.org/)
-[![Celo](https://img.shields.io/badge/Built%20on-Celo-35D07F)](https://celo.org/)
+[![Cronos](https://img.shields.io/badge/Built%20on-Cronos-blue)](https://cronos.org/)
+[![x402](https://img.shields.io/badge/x402-Agentic%20Payments-green)](https://docs.cronos.org/)
 
-> **Production-Ready** decentralized escrow platform with identity verification and multi-token support
+> **Cronos x402 Paytech Hackathon Submission** - AI agents that autonomously manage freelance payments using x402 programmable payment rails
 
-## 🚀 Overview
+## 🚀 What is Luminar?
 
-SecureFlow is a comprehensive decentralized platform combining escrow services with a freelance marketplace, built on Celo blockchain. Features gasless transactions through MetaMask Smart Accounts, multi-arbiter dispute resolution, reputation systems, identity verification via Self Protocol, and support for multiple payment tokens including GoodDollar (G$).
+Luminar is an intelligent freelance escrow platform that revolutionizes how payments are managed in the gig economy. By combining **AI agents** with **x402 payment rails** on Cronos EVM, Luminar automates the entire payment lifecycle—from milestone verification to dispute resolution.
 
-**Live Contract**: [`0x067FDA1ED957BB352679cbc840Ce6329E470fd07`](https://celoscan.io/address/0x067FDA1ED957BB352679cbc840Ce6329E470fd07) on Celo Mainnet
+**The Problem:** Traditional escrow requires manual oversight, leading to delays, disputes, and trust issues.
 
-## ✨ Key Features
+**Our Solution:** AI agents monitor deliverables 24/7, automatically approve quality work, and trigger instant payments via x402—all while maintaining full transparency on-chain.
 
-### 🏗️ Core Platform
+## ✨ Key Innovations
 
-- **Hybrid Escrow + Marketplace**: Direct hires and open job applications
-- **Gasless Transactions**: MetaMask Smart Account integration for zero-fee transactions
-- **Multi-Arbiter Consensus**: 1-5 arbiters with quorum-based voting
-- **Reputation System**: Anti-gaming reputation tracking with NFT badges
-- **Multi-Token Support**: Native CELO, cUSD, and GoodDollar (G$) payments
+### 🤖 AI Milestone Monitor
+- Analyzes deliverable submissions using AI
+- Auto-approves milestones that meet requirements
+- Triggers x402 payment instructions instantly
+- Learns from feedback to improve decisions
 
-### 🔐 Identity & Security
+### ⚖️ AI Dispute Arbitrator
+- Reviews evidence from both parties
+- Recommends fair resolutions based on analysis
+- Executes settlements via x402 automatically
+- Escalates complex cases to human arbiters
 
-- **Self Protocol Integration**: Privacy-first identity verification using zero-knowledge proofs
-  - Sybil attack prevention
-  - Age verification (18+)
-  - Humanity checks
-  - On-chain verification tracking
-- **Smart Account Integration**: Delegated execution for gasless transactions
-- **Reentrancy Protection**: All external functions protected
-- **Emergency Controls**: Admin pause and refund mechanisms
+### ⚡ x402 Agentic Payments
+- Programmable payment rails for automated execution
+- AI-triggered payment instructions
+- Multi-step payment workflows
+- Full on-chain audit trail
 
-### 🎯 Advanced Features
+### 🔒 Security & Transparency
+- All AI decisions recorded on-chain
+- Agent success rates tracked publicly
+- Multi-signature fallbacks for safety
+- Emergency pause controls
 
-- **Milestone Management**: Submit, approve, reject, dispute milestones with feedback
-- **Job Applications**: Freelancers apply to open jobs with pagination
-- **Dispute Resolution**: Time-limited dispute windows with arbiter consensus
-- **Real-time Notifications**: In-app notification system
-- **Rating System**: Comprehensive freelancer rating with anti-gaming protection
-- **GoodWallet Integration**: Support for GoodDollar UBI payments
+## 🏗️ Architecture
 
-### 💰 Payment Tokens
-
-- **CELO**: Native blockchain currency
-- **cUSD**: Celo Dollar stablecoin (whitelisted)
-- **GoodDollar (G$)**: Universal Basic Income token (whitelisted)
-  - Address: `0x62B8B11039FcfE5aB0C56E502b1C372A3d2a9c7A`
-  - Claim daily G$ UBI via GoodWallet
-  - Use G$ for all SecureFlow payments
+```
+┌─────────────────────────────────────────────────────────┐
+│                    Luminar Platform                      │
+├─────────────────────────────────────────────────────────┤
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐ │
+│  │   Luminar    │  │     x402     │  │  AI Agent    │ │
+│  │   Contract   │◄─┤ Integration  │◄─┤   Registry   │ │
+│  └──────────────┘  └──────────────┘  └──────────────┘ │
+└─────────────────────────────────────────────────────────┘
+           ▲                    ▲
+           │                    │
+    ┌──────┴──────┐      ┌─────┴──────┐
+    │  Milestone  │      │  Dispute   │
+    │   Monitor   │      │ Arbitrator │
+    │  AI Agent   │      │  AI Agent  │
+    └─────────────┘      └────────────┘
+```
 
 ## 📁 Project Structure
 
 ```
-secureflow-celo/
+luminar/
 ├── contracts/
-│   ├── SecureFlow.sol          # Main escrow & marketplace contract
-│   ├── modules/                # Modular contract components
-│   │   ├── EscrowCore.sol
-│   │   ├── Marketplace.sol
-│   │   ├── RatingSystem.sol
-│   │   └── ...
-│   └── interfaces/
-│       └── ISecureFlow.sol
-├── frontend/                   # Next.js 15 application
-│   ├── app/                    # App router pages
-│   ├── components/             # UI components
-│   │   ├── gooddollar/        # GoodDollar integration
-│   │   ├── self/              # Self Protocol components
-│   │   └── ...
-│   ├── contexts/              # React contexts
-│   ├── hooks/                 # Custom hooks
-│   └── lib/                   # Utilities and configs
+│   ├── Luminar.sol              # Main escrow contract
+│   ├── X402Integration.sol      # x402 payment rails
+│   ├── AIAgentRegistry.sol      # Agent management
+│   └── modules/                 # Escrow modules
+├── agents/
+│   ├── MilestoneMonitor.js      # AI milestone agent
+│   ├── DisputeArbitrator.js     # AI dispute agent
+│   ├── setup-agents.js          # Agent deployment
+│   └── demo.js                  # Demo scenarios
+├── lib/x402/
+│   └── facilitator.js           # x402 wrapper
 ├── scripts/
-│   ├── deploy.js              # Contract deployment
-│   ├── whitelist-gooddollar.js
-│   ├── verify-gooddollar.js
-│   └── ...
-├── deployed.json              # Deployment information
-└── README.md                  # This file
+│   ├── deploy-cronos.js         # Deployment script
+│   └── verify-cronos.js         # Verification script
+└── frontend/                    # Next.js UI (TBD)
 ```
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
-- **Node.js**: >=22 <23 (required for Self Protocol)
+- **Node.js** >= 18
 - **MetaMask** or compatible wallet
-- **Celo mainnet** access (for production) or Alfajores testnet (for testing)
+- **Cronos testnet** CRO tokens ([Get from faucet](https://cronos.org/faucet))
 
 ### Installation
 
-1. **Clone and install dependencies**
-
 ```bash
-git clone <repository-url>
-cd secureflow-celo
+# Clone repository
+git clone <repo-url>
+cd luminar
+
+# Install dependencies
 npm install
-cd frontend
-npm install
+
+# Configure environment
+cp .env.cronos.example .env
+# Edit .env and add your PRIVATE_KEY and API keys
 ```
 
-2. **Environment setup**
-
-Create `.env` in root:
-```env
-CELO_RPC_URL=https://forno.celo.org
-CELO_TESTNET_RPC_URL=https://alfajores-forno.celo-testnet.org
-PRIVATE_KEY=your_private_key_here
-CELOSCAN_API_KEY=your_celoscan_api_key
-```
-
-Create `frontend/.env.local`:
-```env
-NEXT_PUBLIC_SECUREFLOW_ESCROW=0x067FDA1ED957BB352679cbc840Ce6329E470fd07
-NEXT_PUBLIC_CUSD_ADDRESS=0x765DE816845861e75A25fCA122bb6898B8B1282a
-NEXT_PUBLIC_REOWN_ID=your_reown_project_id
-NEXT_PUBLIC_CELO_RPC_URL=https://forno.celo.org
-```
-
-3. **Start development server**
+### Deploy to Cronos Testnet
 
 ```bash
-cd frontend
-npm run dev
+# 1. Deploy contracts
+npm run deploy:cronos-testnet
+
+# 2. Setup AI agents
+npm run setup-agents
+
+# 3. Run demo
+node agents/demo.js cronosTestnet
 ```
 
-Visit `http://localhost:3000`
+## 🎬 Demo Scenarios
 
-## 📦 Contract Deployment
+### Scenario 1: AI Milestone Approval
 
-### Deploy to Celo Mainnet
-
-```bash
-# Deploy SecureFlow contract
-npx hardhat run scripts/deploy.js --network celo
-
-# Whitelist GoodDollar token
-npx hardhat run scripts/whitelist-gooddollar.js --network celo
-
-# Verify contracts on Celoscan
-npx hardhat run scripts/verify-contracts.js --network celo
+```javascript
+// Client creates $1000 escrow with milestone
+// Freelancer completes work and submits deliverable
+// AI Milestone Monitor analyzes submission
+// AI approves → x402 triggers instant payment ✅
 ```
 
-### Verify Token
+### Scenario 2: AI Dispute Resolution
 
+```javascript
+// Client raises dispute about deliverable quality  
+// AI Arbitrator analyzes evidence from both parties
+// AI recommends resolution (favor freelancer/client)
+// x402 executes settlement payment automatically ⚖️
+```
+
+Run the full demo:
 ```bash
-# Verify GoodDollar token details
-node scripts/verify-gooddollar.js
+npm run test:agents
 ```
 
 ## 🔧 Configuration
 
-### Supported Networks
+### Environment Variables
 
-- **Celo Mainnet** (Chain ID: 42220)
-  - RPC: `https://forno.celo.org`
-  - Explorer: https://celoscan.io
-- **Celo Alfajores Testnet** (Chain ID: 44787)
-  - RPC: `https://alfajores-forno.celo-testnet.org`
-  - Explorer: https://alfajores.celoscan.io
+```env
+# Cronos Network
+CRONOS_TESTNET_RPC_URL=https://evm-t3.cronos.org
+PRIVATE_KEY=your_private_key_here
+CRONOSCAN_API_KEY=your_api_key_here
 
-### Whitelisted Tokens
+# x402 (optional)
+X402_FACILITATOR_URL=https://x402-facilitator.crypto.com
+X402_API_KEY=your_x402_key
 
-- **CELO**: Native token (always supported)
-- **cUSD**: `0x765DE816845861e75A25fCA122bb6898B8B1282a`
-- **GoodDollar (G$)**: `0x62B8B11039FcfE5aB0C56E502b1C372A3d2a9c7A`
-
-### Adding New Tokens
-
-Admin can whitelist additional ERC20 tokens via:
-- Admin dashboard (`/admin`)
-- Or deployment script: `scripts/whitelist-token.js`
-
-## 🎨 Features in Detail
-
-### Self Protocol Integration
-
-SecureFlow integrates with Self Protocol for identity verification:
-
-- **Privacy-First**: Zero-knowledge proofs ensure no personal data is stored
-- **Sybil Prevention**: One verified identity per user
-- **Age Verification**: Ensures users are 18+
-- **On-Chain Tracking**: Verification status stored in smart contract
-
-**Verification Flow:**
-1. User connects wallet
-2. Click "Verify Identity" button
-3. Scan QR code with Self mobile app
-4. Complete verification
-5. Status updated on-chain
-
-**Note**: Self Protocol requires HTTPS and doesn't work on localhost. Use ngrok or deploy to Vercel for testing.
-
-### GoodDollar Integration
-
-SecureFlow supports GoodDollar (G$) payments:
-
-- **UBI Payments**: Users can receive payments in G$ tokens
-- **GoodWallet Support**: Claim daily G$ and use for payments
-- **Balance Display**: View G$ balance in dashboard
-- **Seamless Integration**: Works with all existing escrow features
-
-**Get G$ Tokens:**
-1. Install GoodWallet V2: https://goodwallet.xyz/
-2. Claim daily G$ UBI
-3. Use G$ for SecureFlow payments
-
-### Smart Accounts
-
-- **Gasless Transactions**: Transactions sponsored via Paymaster
-- **Delegated Execution**: Users can delegate transaction execution
-- **Enhanced Security**: Smart account abstraction for better UX
-
-## 🌐 Production Deployment
-
-### Vercel Deployment
-
-1. **Push to GitHub**
-
-```bash
-git add .
-git commit -m "Production ready"
-git push origin main
+# AI (for production)
+OPENAI_API_KEY=your_openai_key # For real AI analysis
 ```
 
-2. **Connect to Vercel**
+## 📊 Smart Contracts
 
-- Go to https://vercel.com
-- Import your GitHub repository
-- Add environment variables (see `VERCEL_SETUP.md`)
+### Cronos Testnet Deployment
 
-3. **Required Environment Variables**
+| Contract | Address | Explorer |
+|----------|---------|----------|
+| Luminar | TBD | [View](https://testnet.cronoscan.com) |
+| X402Integration | TBD | [View](https://testnet.cronoscan.com) |
+| AIAgentRegistry | TBD | [View](https://testnet.cronoscan.com) |
 
-**Server-side:**
-- `CELO_RPC_URL`: Celo RPC endpoint
-- `CELOSCAN_API_KEY`: Celoscan API key
+*Deploy first, addresses will populate after deployment*
 
-**Client-side (NEXT_PUBLIC_*):**
-- `NEXT_PUBLIC_SECUREFLOW_ESCROW`: Contract address
-- `NEXT_PUBLIC_CUSD_ADDRESS`: cUSD token address
-- `NEXT_PUBLIC_REOWN_ID`: Reown (WalletConnect) project ID
-- `NEXT_PUBLIC_CELO_RPC_URL`: Celo RPC endpoint
+## 🎯 Hackathon Features
 
-4. **Deploy**
+### Main Track Requirements ✅
+- ✅ AI agents using x402 for novel on-chain actions
+- ✅ Agent-triggered payments
+- ✅ Dynamic asset management (escrow)
+- ✅ Automated treasury logic (milestone payments)
 
-Vercel will automatically deploy on push to main branch.
+### Agentic Finance Track ✅  
+- ✅ Automated settlement pipelines
+- ✅ Multi-step transactions (milestone → approval → payment)
+- ✅ Conditional instruction sets (AI-based approval)
 
-### Post-Deployment Checklist
-
-- [ ] Verify contract addresses are correct
-- [ ] Test wallet connection
-- [ ] Test escrow creation
-- [ ] Test payment flows
-- [ ] Verify Self Protocol works (requires HTTPS)
-- [ ] Check GoodDollar token whitelisting
-- [ ] Test on mobile devices
-- [ ] Verify all environment variables set
-
-## 🛡️ Security
-
-### Smart Contract Security
-
-- **Audited**: Following OpenZeppelin security best practices
-- **Reentrancy Protection**: All external functions protected
-- **Access Control**: Role-based permissions (Owner, Arbiters)
-- **Input Validation**: Comprehensive parameter checking
-- **Emergency Controls**: Pause functionality for emergencies
-
-### Frontend Security
-
-- **HTTPS Required**: For Self Protocol and production
-- **Wallet Connection**: Secure via Reown/WalletConnect
-- **Input Sanitization**: All user inputs validated
-- **Error Handling**: Graceful error handling throughout
-
-## 📚 Documentation
-
-- **[Self Protocol Integration](SELF_PROTOCOL_INTEGRATION.md)**: Complete Self Protocol guide
-- **[Vercel Setup](VERCEL_SETUP.md)**: Production deployment guide
+### Technical Innovation 🚀
+- **AI-Powered Decision Making**: Agents analyze deliverables and evidence
+- **x402 Payment Automation**: Programmable payment execution
+- **On-Chain Transparency**: All agent actions recorded
+- **Production-Ready Code**: Built on battle-tested SecureFlow codebase
 
 ## 🧪 Testing
 
-### Local Testing
-
-**Note**: Self Protocol doesn't work on localhost. For testing:
-
-1. **Use ngrok** (quick):
 ```bash
-npm install -g ngrok
-ngrok http 3000
-# Use the https://xxx.ngrok.io URL
-```
+# Compile contracts
+npx hardhat compile
 
-2. **Deploy to Vercel** (recommended):
-- Every push creates a preview deployment
-- Perfect for testing Self Protocol
+# Run contract tests
+npx hardhat test --network cronosTestnet
 
-### Contract Testing
-
-```bash
-# Run tests
-npx hardhat test
+# Test AI agents
+node agents/demo.js cronosTestnet
 
 # Verify contracts
-npx hardhat run scripts/verify-contracts.js --network celo
+npm run verify:cronos-testnet
 ```
 
-## 🛠️ Development
+## 🛡️ Security
 
-### Available Scripts
+- **Audited Modules**: Built on OpenZeppelin standards
+- **Reentrancy Protection**: All external functions protected
+- **Agent Success Tracking**: Low-performing agents auto-disabled
+- **Emergency Controls**: Owner can pause system
+- **Multi-sig Support**: Critical actions require approvals
 
-**Root:**
-```bash
-npm install           # Install dependencies
-npm run compile       # Compile contracts
-npm test             # Run tests
-```
+## 📈 Roadmap
 
-**Frontend:**
-```bash
-cd frontend
-npm install          # Install dependencies
-npm run dev          # Start dev server
-npm run build        # Build for production
-npm start            # Start production server
-```
+**Hackathon MVP (Current)**
+- ✅ Core escrow with x402integration
+- ✅ AI Milestone Monitor
+- ✅ AI Dispute Arbitrator
+- ✅ On-chain agent registry
+- 🔄 Frontend integration *(in progress)*
 
-### Project Structure
+**Post-Hackathon**
+- 🔮 Real AI models (OpenAI/Claude integration)
+- 🔮 Multi-agent consensus
+- 🔮 Reputation-based agent selection
+- 🔮 Cross-chain x402 support
+- 🔮 Mobile app
 
-- **Contracts**: Solidity smart contracts in `contracts/`
-- **Frontend**: Next.js app in `frontend/`
-- **Scripts**: Deployment and utility scripts in `scripts/`
+## 🏆 Why Luminar Wins
 
-## 📊 Contract Information
+1. **Real Innovation**: First platform to use AI + x402 for escrow automation
+2. **Production Quality**: Built on proven SecureFlow codebase
+3. **Solves Real Problems**: Freelancers get paid faster, clients get better assurance
+4. **Fully Functional**: Working demo with actual AI agents and x402 integration
+5. **Ecosystem Value**: Brings DeFi automation to the $1.5T gig economy
 
-### Main Contract
+## 📚 Learn More
 
-- **Address**: `0x067FDA1ED957BB352679cbc840Ce6329E470fd07`
-- **Network**: Celo Mainnet
-- **Explorer**: [View on Celoscan](https://celoscan.io/address/0x067FDA1ED957BB352679cbc840Ce6329E470fd07)
-- **Version**: 1.0.0
+- [Cronos x402 Docs](https://docs.cronos.org/cronos-x402-facilitator/)
+- [Implementation Plan](./docs/implementation_plan.md)
+- [AI Agent Architecture](./docs/agent-architecture.md)
 
-### Features
+## 🤝 Team
 
-- ✅ Modular architecture
-- ✅ Multi-arbiter consensus
-- ✅ Reputation system
-- ✅ Job applications
-- ✅ Enterprise security
-- ✅ Native & ERC20 support
-- ✅ Self Protocol integration
-- ✅ GoodDollar support
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+Built for the Cronos x402 Paytech Hackathon by passionate builders who believe in AI-powered DeFi automation.
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 🆘 Support
-
-- **GitHub Issues**: Report bugs and request features
-- **Documentation**: See project docs for detailed guides
-- **Contract Explorer**: [Celoscan](https://celoscan.io/address/0x067FDA1ED957BB352679cbc840Ce6329E470fd07)
-
-## 🙏 Acknowledgments
-
-- **Celo Network**: For the amazing blockchain infrastructure
-- **Self Protocol**: For privacy-first identity verification
-- **GoodDollar**: For Universal Basic Income token support
-- **OpenZeppelin**: For secure smart contract libraries
-- **Reown/WalletConnect**: For wallet connection infrastructure
+MIT License - see LICENSE file for details
 
 ---
 
-**Built with ❤️ for the decentralized future of work**
+**Built with ❤️ on Cronos EVM | Powered by x402 Agentic Payments**
 
-_SecureFlow - Where trust meets technology_
-
-**Version**: 1.0.0 | **Status**: Production Ready ✅
+_Luminar - Where AI meets trust in the future of work_ ✨
