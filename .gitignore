@@ -1,79 +1,41 @@
-# Dependencies
-node_modules/
-npm-debug.log*
-
-
-# Hardhat files
+# Build outputs
 cache/
 artifacts/
-typechain/
-typechain-types/
+node_modules/
+frontend/node_modules/
+frontend/.next/
+*.tsbuildinfo
 
-# Environment variables
+# Environment files with secrets
 .env
 .env.local
+.env.*.local
 
+# AI Agent private keys (CRITICAL - DO NOT COMMIT)
+agents/config-*.json
 
-# IDE files
+# IDE
+.vscode/
 .idea/
 *.swp
 *.swo
 *~
 
-# OS generated files
+# OS
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
 Thumbs.db
 
 # Logs
-logs
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
-# Coverage directory
+# Testing
 coverage/
-*.lcov
-coverage.json
+.nyc_output/
 
-# Optional npm cache directory
-.npm
-
-# Optional eslint cache
-.eslintcache
-
-# Editor directories and files
-.vscode
-
-
-# Solidity
-*.abi
-*.bin
-*.bin-runtime
-
-# Build outputs
-build/
-dist/
-out/
-
-# Local development
-.local/
-
-# Theme and customization files
-secureflow-theme.json
-apply-theme.sh
-check-colors.sh
-fix-syntax.sh
-deployed-addresses.json
-.vercel
-
-# Documentation (temporary/development)
-# Keep only production docs in repo
-# *-QUICKSTART.md
-# *-STATUS.md
-# *-SETUP_COMPLETE.md
-
-# Scripts output
-*.log
+# Temporary
+*.tmp
+*.temp
+.cache/
