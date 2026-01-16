@@ -1,0 +1,14 @@
+{
+    "network": "cronosTestnet",
+    "chainId": 338,
+    "deployer": "0x3Be7fbBDbC73Fc4731D60EF09c4BA1A94DC58E41",
+    "timestamp": "2026-01-16T17:00:00.000Z",
+    "contracts": {
+        "AIAgentRegistry": "0x659D3Ede264F2017C84C341000d02c13d1004490",
+        "X402Integration": "0xdee8489FFfdB8Ce1643ecD508Ce1ca48575D4f31"
+    },
+    "explorer": {
+        "AIAgentRegistry": "https://testnet.cronoscan.com/address/0x659D3Ede264F2017C84C341000d02c13d1004490",
+        "X402Integration": "https://testnet.cronoscan.com/address/0xdee8489FFfdB8Ce1643ecD508Ce1ca48575D4f31"
+    }
+}
