@@ -9,33 +9,29 @@ export function useAdminStatus() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const checkAdminStatus = () => {
-      if (!wallet.isConnected || !wallet.address) {
-        setIsAdmin(false);
-        setIsOwner(false);
-        setIsArbiter(false);
-        setLoading(false);
-        return;
-      }
+    if (!wallet.isConnected || !wallet.address) {
+      setIsAdmin(false);
+      setIsOwner(false);
+      setIsArbiter(false);
+      setLoading(false);
+      return;
+    }
 
-      try {
-        // Check if connected address matches the admin/deployer address
-        const adminAddress = process.env.NEXT_PUBLIC_ADMIN_ADDRESS || "0x3Be7fbBDbC73Fc4731D60EF09c4BA1A94DC58E41";
-        const isConnectedAddressAdmin = wallet.address.toLowerCase() === adminAddress.toLowerCase();
-        setIsAdmin(isConnectedAddressAdmin);
-        setIsOwner(isConnectedAddressAdmin); // For Luminar, owner = admin
-        setIsArbiter(false); // Not using arbiters for now
-      } catch (error) {
-        console.error("Error checking admin status:", error);
-        setIsAdmin(false);
-        setIsOwner(false);
-        setIsArbiter(false);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    checkAdminStatus();
+    try {
+      // Check if connected address matches the admin/deployer address
+      const adminAddress = process.env.NEXT_PUBLIC_ADMIN_ADDRESS || "0x3Be7fbBDbC73Fc4731D60EF09c4BA1A94DC58E41";
+      const isConnectedAddressAdmin = wallet.address.toLowerCase() === adminAddress.toLowerCase();
+      setIsAdmin(isConnectedAddressAdmin);
+      setIsOwner(isConnectedAddressAdmin);
+      setIsArbiter(false);
+    } catch (error) {
+      console.error("Error checking admin status:", error);
+      setIsAdmin(false);
+      setIsOwner(false);
+      setIsArbiter(false);
+    } finally {
+      setLoading(false);
+    }
   }, [wallet.isConnected, wallet.address]);
 
   return {

@@ -13,6 +13,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@coinbase/wallet-sdk": "^4.3.7",
     "@emotion/is-prop-valid": "latest",
     "@farcaster/miniapp-sdk": "^0.2.1",
     "@goodsdks/engagement-sdk": "^1.0.3",
