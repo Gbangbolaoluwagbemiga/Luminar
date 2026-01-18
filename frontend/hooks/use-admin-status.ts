@@ -1,69 +1,47 @@
 import { useState, useEffect } from "react";
 import { useWeb3 } from "@/contexts/web3-context";
-import { CONTRACTS } from "@/lib/web3/config";
-import { SECUREFLOW_ABI } from "@/lib/web3/abis";
 
 export function useAdminStatus() {
-  const { wallet, getContract } = useWeb3();
+  const { wallet } = useWeb3();
   const [isAdmin, setIsAdmin] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
   const [isArbiter, setIsArbiter] = useState(false);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!wallet.isConnected || !wallet.address) {
-      setIsAdmin(false);
-      setIsOwner(false);
-      setIsArbiter(false);
-      return;
-    }
-
-    checkAdminStatus();
-  }, [wallet.isConnected, wallet.address]);
-
-  const checkAdminStatus = async () => {
-    setLoading(true);
-    try {
-      const contract = getContract(CONTRACTS.SECUREFLOW_ESCROW, SECUREFLOW_ABI);
-      if (!contract) {
+    const checkAdminStatus = () => {
+      if (!wallet.isConnected || !wallet.address) {
         setIsAdmin(false);
         setIsOwner(false);
         setIsArbiter(false);
+        setLoading(false);
         return;
       }
 
-      // Get the contract owner
-      const owner = await contract.call("owner");
+      try {
+        // Check if connected address matches the admin/deployer address
+        const adminAddress = process.env.NEXT_PUBLIC_ADMIN_ADDRESS || "0x3Be7fbBDbC73Fc4731D60EF09c4BA1A94DC58E41";
+        const isConnectedAddressAdmin = wallet.address.toLowerCase() === adminAddress.toLowerCase();
+        setIsAdmin(isConnectedAddressAdmin);
+        setIsOwner(isConnectedAddressAdmin); // For Luminar, owner = admin
+        setIsArbiter(false); // Not using arbiters for now
+      } catch (error) {
+        console.error("Error checking admin status:", error);
+        setIsAdmin(false);
+        setIsOwner(false);
+        setIsArbiter(false);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-      // Check if current wallet is the owner
-      const ownerCheck =
-        owner.toString().toLowerCase() === wallet.address?.toLowerCase();
-      setIsOwner(ownerCheck);
-
-      // Check if current wallet is an authorized arbiter
-      const arbiterCheck = await contract.call(
-        "authorizedArbiters",
-        wallet.address
-      );
-      setIsArbiter(Boolean(arbiterCheck));
-
-      // Admin access is granted to both owner and arbiters
-      setIsAdmin(ownerCheck || Boolean(arbiterCheck));
-    } catch (error) {
-      console.error("Error checking admin status:", error);
-      setIsAdmin(false);
-      setIsOwner(false);
-      setIsArbiter(false);
-    } finally {
-      setLoading(false);
-    }
-  };
+    checkAdminStatus();
+  }, [wallet.isConnected, wallet.address]);
 
   return {
     isAdmin,
     isOwner,
     isArbiter,
     loading,
-    refreshAdminStatus: checkAdminStatus,
   };
 }
