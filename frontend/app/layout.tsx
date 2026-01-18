@@ -21,9 +21,9 @@ export const metadata: Metadata = {
   generator: "Luminar",
   manifest: "/manifest.json",
   icons: {
-    icon: "/secureflow-favicon.svg?v=2",
-    apple: "/secureflow-favicon.svg?v=2",
-    shortcut: "/secureflow-favicon.svg?v=2",
+    icon: "/luminar-favicon.png",
+    apple: "/luminar-favicon.png",
+    shortcut: "/luminar-favicon.png",
   },
 };
 
@@ -37,10 +37,10 @@ export default function RootLayout({
       <head>
         <link
           rel="icon"
-          href="/secureflow-favicon.svg?v=2"
-          type="image/svg+xml"
+          href="/luminar-favicon.png"
+          type="image/png"
         />
-        <link rel="apple-touch-icon" href="/secureflow-favicon.svg?v=2" />
+        <link rel="apple-touch-icon" href="/luminar-favicon.png" />
         <link rel="manifest" href="/manifest.json" />
 
         {/* Farcaster Mini App Embed Metadata */}
@@ -48,13 +48,13 @@ export default function RootLayout({
           name="fc:miniapp"
           content='{
           "version":"next",
-          "imageUrl":"https://secure-flow-base.vercel.app/secureflow-favicon.svg?v=2",
+          "imageUrl":"https://luminar.app/luminar-logo.png",
           "button":{
-            "title":"Launch SecureFlow",
+            "title":"Launch Luminar",
             "action":{
               "type":"launch_miniapp",
-              "name":"SecureFlow",
-              "url":"https://secure-flow-base.vercel.app"
+              "name":"Luminar",
+              "url":"https://luminar.app"
             }
           }
         }'

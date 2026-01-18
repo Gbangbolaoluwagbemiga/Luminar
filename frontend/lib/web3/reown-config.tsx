@@ -17,7 +17,7 @@ export const metadata = {
   url: typeof window !== "undefined" 
     ? window.location.origin 
     : process.env.NEXT_PUBLIC_APP_URL || "https://secureflow.app",
-  icons: ["/secureflow-logo.svg"],
+  icons: ["/luminar-logo.png"],
 };
 
 // Define networks - Celo is first (primary network)
