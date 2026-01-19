@@ -10,38 +10,30 @@ export const projectId =
   process.env.NEXT_PUBLIC_REOWN_ID || "1db88bda17adf26df9ab7799871788c4";
 
 // Create metadata
-// In development, use localhost; in production, use the production URL
 export const metadata = {
-  name: "SecureFlow",
-  description: "Secure Escrow Platform for Freelancers",
-  url: typeof window !== "undefined" 
-    ? window.location.origin 
-    : process.env.NEXT_PUBLIC_APP_URL || "https://secureflow.app",
+  name: "Luminar",
+  description: "AI-Powered Escrow on Cronos with x402 Agentic Payments",
+  url: typeof window !== "undefined"
+    ? window.location.origin
+    : process.env.NEXT_PUBLIC_APP_URL || "https://luminar.app",
   icons: ["/luminar-logo.png"],
 };
 
-// Define networks - Celo is first (primary network)
+// Define Cronos networks
 const networks = [
   {
-    id: 42220,
-    name: "Celo",
-    currency: "CELO",
-    explorerUrl: "https://celoscan.io",
-    rpcUrl: "https://forno.celo.org",
+    id: 338, // Cronos Testnet
+    name: "Cronos Testnet",
+    currency: "TCRO",
+    explorerUrl: "https://testnet.cronoscan.com",
+    rpcUrl: "https://evm-t3.cronos.org",
   },
   {
-    id: 84532,
-    name: "Base Sepolia Testnet",
-    currency: "CELO",
-    explorerUrl: "https://sepolia.basescan.org",
-    rpcUrl: "https://sepolia.base.org",
-  },
-  {
-    id: 8453,
-    name: "Base",
-    currency: "CELO",
-    explorerUrl: "https://basescan.org",
-    rpcUrl: "https://mainnet.base.org",
+    id: 25, // Cronos Mainnet
+    name: "Cronos Mainnet",
+    currency: "CRO",
+    explorerUrl: "https://cronoscan.com",
+    rpcUrl: "https://evm.cronos.org",
   },
 ];
 
