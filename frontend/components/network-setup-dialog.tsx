@@ -133,7 +133,7 @@ export function NetworkSetupDialog({
                 </div>
                 <div className="flex justify-between">
                   <span>Currency:</span>
-                  <span className="font-mono">CELO</span>
+                  <span className="font-mono">TCRO</span>
                 </div>
                 <div className="flex justify-between">
                   <span>RPC URL:</span>
@@ -145,7 +145,7 @@ export function NetworkSetupDialog({
 
           <div className="text-sm text-muted-foreground">
             <p>
-              Don't have CELO tokens? You can get them from:
+              Don't have TCRO tokens? You can get them from:
             </p>
             <ul className="list-disc list-inside mt-2 space-y-1">
               <li>
