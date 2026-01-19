@@ -117,7 +117,7 @@ export function Web3Provider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (appKitConnected && appKitAddress) {
       const chainIdNumber = appKitChainId ? Number(appKitChainId) : null;
-      const targetChainId = Number.parseInt(CRONOS_MAINNET.chainId, 16);
+      const targetChainId = Number.parseInt(CRONOS_TESTNET.chainId, 16); // Changed to TESTNET (338)
 
       // Update wallet state from AppKit
       if (chainIdNumber === targetChainId) {
@@ -143,7 +143,7 @@ export function Web3Provider({ children }: { children: ReactNode }) {
         // Show helpful message
         toast({
           title: "Wrong Network",
-          description: "Please switch to Cronos Mainnet or add it if it's not in your wallet.",
+          description: "Please switch to Cronos Testnet.",
           variant: "destructive",
         });
       }
